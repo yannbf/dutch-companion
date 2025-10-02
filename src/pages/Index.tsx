@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect } from "react";
 import { AnimatePresence } from "framer-motion";
 import { verbData, VerbCard } from "@/data/verbs";
-import { VerbCard as VerbCardComponent } from "@/components/VerbCard";
+import { CardPile } from "@/components/CardPile";
 import { PointTracker } from "@/components/PointTracker";
 import { GameControls } from "@/components/GameControls";
 import { SummaryScreen } from "@/components/SummaryScreen";
@@ -280,9 +280,10 @@ const Index = () => {
         <div className="pointer-events-auto">
           <AnimatePresence mode="wait">
             {currentVerb && (
-              <VerbCardComponent
-                key={`${currentVerb.infinitive}-${currentIndex}`}
-                verb={currentVerb}
+              <CardPile
+                key={`pile-${currentIndex}`}
+                verbs={currentSessionVerbs}
+                currentIndex={currentIndex}
                 cardState={cardState}
                 onFlip={handleFlip}
                 onSwipe={handleSwipe}

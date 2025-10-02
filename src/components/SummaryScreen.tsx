@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { Trophy, RotateCcw, ChevronDown } from "lucide-react";
+import { Trophy, RotateCcw, ChevronDown, Volume2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { VerbCard } from "@/data/verbs";
 import {
@@ -26,7 +26,8 @@ export const SummaryScreen = ({ finalScore, totalCards, onRestart, results }: Su
   const [isOpen, setIsOpen] = useState(false);
   const percentage = Math.round((finalScore / totalCards) * 100);
 
-  const handleVerbClick = (verb: VerbCard) => {
+  const handleVerbClick = (verb: VerbCard, event: React.MouseEvent) => {
+    event.stopPropagation();
     speakerService.speak(verb.infinitive);
   };
 
@@ -67,10 +68,17 @@ export const SummaryScreen = ({ finalScore, totalCards, onRestart, results }: Su
                 {results.map((result, index) => (
                   <div
                     key={index}
-                    className="flex items-center justify-between p-3 bg-secondary/20 rounded-lg cursor-pointer hover:bg-secondary/30 transition-colors"
-                    onClick={() => handleVerbClick(result.verb)}
+                    className="flex items-center justify-between p-3 bg-secondary/20 rounded-lg hover:bg-secondary/30 transition-colors"
                   >
-                    <span className="font-bold text-foreground">{result.verb.infinitive}</span>
+                    <div className="flex items-center gap-3">
+                      <button
+                        className="p-1 hover:bg-secondary/50 rounded transition-colors"
+                        onClick={(e) => handleVerbClick(result.verb, e)}
+                      >
+                        <Volume2 className="w-4 h-4 text-muted-foreground" />
+                      </button>
+                      <span className="font-bold text-foreground">{result.verb.infinitive}</span>
+                    </div>
                     <span
                       className={`w-3 h-3 rounded-full ${
                         result.correct ? 'bg-green-500' : 'bg-red-500'
