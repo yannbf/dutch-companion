@@ -86,13 +86,21 @@ const Index = () => {
 
   const currentVerb = currentSessionVerbs[currentIndex];
 
-  // Voice mode effect - speak when card changes (only once per session)
+  // Voice mode effect - speak when card changes
   useEffect(() => {
-    if (voiceMode && currentVerb && cardState === 0 && !spokenWords.has(currentVerb.infinitive)) {
-      speakerService.speak(currentVerb.infinitive);
-      setSpokenWords(prev => new Set(prev).add(currentVerb.infinitive));
+    if (voiceMode && currentVerb) {
+      if (cardState === 0) {
+        // Speak infinitive
+        speakerService.speak(currentVerb.infinitive);
+      } else if (cardState === 1) {
+        // Speak imperfectum singularis
+        speakerService.speak(currentVerb.imperfectumSingular);
+      } else if (cardState === 2) {
+        // Speak perfectum participium
+        speakerService.speak(currentVerb.participium);
+      }
     }
-  }, [currentVerb, cardState, voiceMode, spokenWords]);
+  }, [cardState, currentVerb, voiceMode]);
 
   const handleFlip = () => {
     setCardState((prev) => ((prev + 1) % 3) as 0 | 1 | 2);

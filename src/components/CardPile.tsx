@@ -1,6 +1,7 @@
 import { motion, useMotionValue, useTransform, PanInfo } from "framer-motion";
 import { VerbCard as VerbCardType } from "@/data/verbs";
 import { speakerService } from "@/services/speaker";
+import { hapticService } from "@/services/haptic";
 import { Volume2 } from "lucide-react";
 import { useState, useEffect } from "react";
 
@@ -37,13 +38,23 @@ export const CardPile = ({
 
   const handleDragEnd = (event: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
     if (Math.abs(info.offset.x) > 100) {
+      // Provide haptic feedback for swipe
+      hapticService.medium();
       onSwipe(info.offset.x > 0 ? "right" : "left");
     }
   };
 
   const handleSentenceClick = (sentence: string, event: React.MouseEvent) => {
     event.stopPropagation(); // Prevent card flip
+    // Provide haptic feedback for audio button tap
+    hapticService.light();
     speakerService.speak(sentence);
+  };
+
+  const handleCardFlip = () => {
+    // Provide haptic feedback for card flip
+    hapticService.light();
+    onFlip();
   };
 
   // Get the next 3 cards to show in the pile
@@ -92,7 +103,7 @@ export const CardPile = ({
             drag={isActive ? "x" : false}
             dragConstraints={isActive ? { left: 0, right: 0 } : undefined}
             onDragEnd={isActive ? handleDragEnd : undefined}
-            onClick={isActive ? onFlip : undefined}
+            onClick={isActive ? handleCardFlip : undefined}
             initial={{ scale: 0.8, opacity: 0 }}
             animate={{ scale, opacity }}
             transition={{ duration: 0.2, delay: index * 0.05 }}
