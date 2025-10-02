@@ -69,27 +69,29 @@ const Index = () => {
   }
 
   return (
-    <div className="min-h-screen relative overflow-hidden">
+    <div className="min-h-screen relative overflow-hidden flex flex-col">
       <CategoryFilter currentCategory={category} onCategoryChange={handleCategoryChange} />
       <PointTracker points={points} />
       <TranslationToggle showTranslation={showTranslation} onToggle={setShowTranslation} />
 
-      <div className="min-h-screen flex items-center justify-center relative">
-        <AnimatePresence mode="wait">
-          {currentVerb && (
-            <VerbCard
-              key={`${currentVerb.infinitive}-${currentIndex}`}
-              verb={currentVerb}
-              cardState={cardState}
-              onFlip={handleFlip}
-              onSwipe={handleSwipe}
-              showTranslation={showTranslation}
-            />
-          )}
-        </AnimatePresence>
+      <div className="flex-1 flex items-center justify-center pointer-events-none">
+        <div className="pointer-events-auto">
+          <AnimatePresence mode="wait">
+            {currentVerb && (
+              <VerbCard
+                key={`${currentVerb.infinitive}-${currentIndex}`}
+                verb={currentVerb}
+                cardState={cardState}
+                onFlip={handleFlip}
+                onSwipe={handleSwipe}
+                showTranslation={showTranslation}
+              />
+            )}
+          </AnimatePresence>
+        </div>
       </div>
 
-      <div className="fixed bottom-6 right-6 text-sm text-muted-foreground">
+      <div className="fixed bottom-6 right-6 text-sm text-muted-foreground pointer-events-none">
         {currentIndex + 1} / {filteredVerbs.length}
       </div>
     </div>
