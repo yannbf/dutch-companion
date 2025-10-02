@@ -165,12 +165,12 @@ export const CardPile = ({
                     <>
                       <div className="space-y-3 text-left">
                         <p className="text-xl">
-                          <span className="text-muted-foreground">Hulpverbum:</span>{" "}
-                          <span className="font-bold text-foreground">{verb.hulpverbum}</span>
-                        </p>
-                        <p className="text-xl">
                           <span className="text-muted-foreground">Participium:</span>{" "}
                           <span className="font-bold text-foreground">{verb.participium}</span>
+                        </p>
+                        <p className="text-xl">
+                          <span className="text-muted-foreground">Hulpverbum:</span>{" "}
+                          <span className="font-bold text-foreground">{verb.hulpverbum}</span>
                         </p>
                       </div>
                       <div className="mt-6 p-4 bg-secondary/50 rounded-lg">

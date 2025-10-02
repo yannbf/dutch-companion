@@ -75,12 +75,12 @@ export const VerbCard = ({ verb, cardState, onFlip, onSwipe, showTranslation }: 
             <h3 className="text-3xl font-bold text-blue-600 mb-6">Perfectum</h3>
             <div className="space-y-3 text-left">
               <p className="text-xl">
-                <span className="text-muted-foreground">Hulpverbum:</span>{" "}
-                <span className="font-bold text-foreground">{verb.hulpverbum}</span>
-              </p>
-              <p className="text-xl">
                 <span className="text-muted-foreground">Participium:</span>{" "}
                 <span className="font-bold text-foreground">{verb.participium}</span>
+              </p>
+              <p className="text-xl">
+                <span className="text-muted-foreground">Hulpverbum:</span>{" "}
+                <span className="font-bold text-foreground">{verb.hulpverbum}</span>
               </p>
             </div>
             <div
