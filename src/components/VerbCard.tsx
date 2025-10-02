@@ -22,7 +22,7 @@ export const VerbCard = ({ verb, cardState, onFlip, onSwipe, showTranslation }: 
 
   return (
     <motion.div
-      className="absolute inset-0 flex items-center justify-center cursor-grab active:cursor-grabbing"
+      className="cursor-grab active:cursor-grabbing"
       style={{ x, rotate, opacity }}
       drag="x"
       dragConstraints={{ left: 0, right: 0 }}
