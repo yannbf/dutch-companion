@@ -2,6 +2,7 @@ import { motion, useMotionValue, useTransform, PanInfo } from "framer-motion";
 import { VerbCard as VerbCardType } from "@/data/verbs";
 import { speakerService } from "@/services/speaker";
 import { Volume2 } from "lucide-react";
+import { useState, useEffect } from "react";
 
 interface CardPileProps {
   verbs: VerbCardType[];
@@ -23,6 +24,16 @@ export const CardPile = ({
   const x = useMotionValue(0);
   const rotate = useTransform(x, [-200, 200], [-25, 25]);
   const opacity = useTransform(x, [-200, -100, 0, 100, 200], [0, 1, 1, 1, 0]);
+  const [hideBackgroundText, setHideBackgroundText] = useState(false);
+
+  // Hide background text for 200ms when currentIndex changes
+  useEffect(() => {
+    setHideBackgroundText(true);
+    const timer = setTimeout(() => {
+      setHideBackgroundText(false);
+    }, 200);
+    return () => clearTimeout(timer);
+  }, [currentIndex]);
 
   const handleDragEnd = (event: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
     if (Math.abs(info.offset.x) > 100) {
@@ -57,7 +68,7 @@ export const CardPile = ({
   if (!currentVerb) return null;
 
   return (
-    <div className="relative w-80 h-96">
+    <div className="relative w-80 h-96" style={{ isolation: 'isolate' }}>
       {visibleCards.map(({ verb, index, isActive }) => {
         const scale = 1 - (index * 0.05); // Each card is 5% smaller
         const translateY = index * 8; // Each card is 8px lower
@@ -84,14 +95,18 @@ export const CardPile = ({
             onClick={isActive ? onFlip : undefined}
             initial={{ scale: 0.8, opacity: 0 }}
             animate={{ scale, opacity }}
-            transition={{ duration: 0.3, delay: index * 0.1 }}
+            transition={{ duration: 0.2, delay: index * 0.05 }}
           >
             <div className="w-full h-full bg-card border-2 border-primary rounded-2xl p-8 flex flex-col justify-center items-center shadow-2xl relative overflow-hidden" style={{ zIndex: zIndex + 1 }}>
               {cardState === 0 && (
                 <div className="text-center space-y-6">
-                  <h2 className="text-5xl font-black text-primary">{verb.infinitive}</h2>
-                  {showTranslation && (
-                    <p className="text-2xl text-muted-foreground italic">{verb.translation}</p>
+                  {(!hideBackgroundText || isActive) && (
+                    <>
+                      <h2 className="text-5xl font-black text-primary">{verb.infinitive}</h2>
+                      {showTranslation && (
+                        <p className="text-2xl text-muted-foreground italic">{verb.translation}</p>
+                      )}
+                    </>
                   )}
                   {isActive && (
                     <p className="text-sm text-muted-foreground mt-8">Tap to flip • Swipe to score</p>
@@ -102,54 +117,62 @@ export const CardPile = ({
               {cardState === 1 && (
                 <div className="text-center space-y-4 w-full">
                   <h3 className="text-3xl font-bold text-primary mb-6">Imperfectum</h3>
-                  <div className="space-y-3 text-left">
-                    <p className="text-xl">
-                      <span className="text-muted-foreground">Singularis:</span>{" "}
-                      <span className="font-bold text-foreground">{verb.imperfectumSingular}</span>
-                    </p>
-                    <p className="text-xl">
-                      <span className="text-muted-foreground">Pluralis:</span>{" "}
-                      <span className="font-bold text-foreground">{verb.imperfectumPlural}</span>
-                    </p>
-                  </div>
-                  <div className="mt-6 p-4 bg-secondary/50 rounded-lg">
-                    <div className="flex items-start gap-3">
-                      <button
-                        className="flex-shrink-0 p-1 hover:bg-secondary/70 rounded transition-colors"
-                        onClick={(e) => handleSentenceClick(verb.exampleImperfectum, e)}
-                      >
-                        <Volume2 className="w-4 h-4 text-muted-foreground" />
-                      </button>
-                      <p className="text-sm italic text-foreground">{verb.exampleImperfectum}</p>
-                    </div>
-                  </div>
+                  {(!hideBackgroundText || isActive) && (
+                    <>
+                      <div className="space-y-3 text-left">
+                        <p className="text-xl">
+                          <span className="text-muted-foreground">Singularis:</span>{" "}
+                          <span className="font-bold text-foreground">{verb.imperfectumSingular}</span>
+                        </p>
+                        <p className="text-xl">
+                          <span className="text-muted-foreground">Pluralis:</span>{" "}
+                          <span className="font-bold text-foreground">{verb.imperfectumPlural}</span>
+                        </p>
+                      </div>
+                      <div className="mt-6 p-4 bg-secondary/50 rounded-lg">
+                        <div className="flex items-start gap-3">
+                          <button
+                            className="flex-shrink-0 p-1 hover:bg-secondary/70 rounded transition-colors"
+                            onClick={(e) => handleSentenceClick(verb.exampleImperfectum, e)}
+                          >
+                            <Volume2 className="w-4 h-4 text-muted-foreground" />
+                          </button>
+                          <p className="text-sm italic text-foreground">{verb.exampleImperfectum}</p>
+                        </div>
+                      </div>
+                    </>
+                  )}
                 </div>
               )}
 
               {cardState === 2 && (
                 <div className="text-center space-y-4 w-full">
                   <h3 className="text-3xl font-bold text-primary mb-6">Perfectum</h3>
-                  <div className="space-y-3 text-left">
-                    <p className="text-xl">
-                      <span className="text-muted-foreground">Hulpverbum:</span>{" "}
-                      <span className="font-bold text-foreground">{verb.hulpverbum}</span>
-                    </p>
-                    <p className="text-xl">
-                      <span className="text-muted-foreground">Participium:</span>{" "}
-                      <span className="font-bold text-foreground">{verb.participium}</span>
-                    </p>
-                  </div>
-                  <div className="mt-6 p-4 bg-secondary/50 rounded-lg">
-                    <div className="flex items-start gap-3">
-                      <button
-                        className="flex-shrink-0 p-1 hover:bg-secondary/70 rounded transition-colors"
-                        onClick={(e) => handleSentenceClick(verb.examplePerfectum, e)}
-                      >
-                        <Volume2 className="w-4 h-4 text-muted-foreground" />
-                      </button>
-                      <p className="text-sm italic text-foreground">{verb.examplePerfectum}</p>
-                    </div>
-                  </div>
+                  {(!hideBackgroundText || isActive) && (
+                    <>
+                      <div className="space-y-3 text-left">
+                        <p className="text-xl">
+                          <span className="text-muted-foreground">Hulpverbum:</span>{" "}
+                          <span className="font-bold text-foreground">{verb.hulpverbum}</span>
+                        </p>
+                        <p className="text-xl">
+                          <span className="text-muted-foreground">Participium:</span>{" "}
+                          <span className="font-bold text-foreground">{verb.participium}</span>
+                        </p>
+                      </div>
+                      <div className="mt-6 p-4 bg-secondary/50 rounded-lg">
+                        <div className="flex items-start gap-3">
+                          <button
+                            className="flex-shrink-0 p-1 hover:bg-secondary/70 rounded transition-colors"
+                            onClick={(e) => handleSentenceClick(verb.examplePerfectum, e)}
+                          >
+                            <Volume2 className="w-4 h-4 text-muted-foreground" />
+                          </button>
+                          <p className="text-sm italic text-foreground">{verb.examplePerfectum}</p>
+                        </div>
+                      </div>
+                    </>
+                  )}
                 </div>
               )}
             </div>

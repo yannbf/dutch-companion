@@ -33,7 +33,7 @@ export const SummaryScreen = ({ finalScore, totalCards, onRestart, results }: Su
 
   return (
     <motion.div
-      className="min-h-screen flex flex-col items-center justify-center p-6"
+      className="flex flex-col items-center justify-center p-6"
       initial={{ opacity: 0, scale: 0.9 }}
       animate={{ opacity: 1, scale: 1 }}
       transition={{ type: "spring", stiffness: 100 }}
@@ -44,50 +44,50 @@ export const SummaryScreen = ({ finalScore, totalCards, onRestart, results }: Su
           animate={{ scale: 1, rotate: 360 }}
           transition={{ type: "spring", stiffness: 200, delay: 0.2 }}
         >
-          <Trophy className="w-32 h-32 mx-auto text-primary" />
+          <Trophy className="w-24 h-24 mx-auto text-primary" />
         </motion.div>
 
-        <h1 className="text-5xl font-black text-foreground">Session Complete!</h1>
+        <h1 className="text-3xl font-black text-foreground">Session Complete!</h1>
 
         <div className="space-y-4">
           <Collapsible open={isOpen} onOpenChange={setIsOpen} className="w-full">
             <CollapsibleTrigger asChild>
-              <div className="bg-card border-2 border-primary rounded-2xl p-8 cursor-pointer hover:bg-primary/5 transition-colors relative">
+              <div className="bg-card border-2 border-primary rounded-2xl p-8 cursor-pointer relative">
                 <div className="text-center">
                   <p className="text-sm text-muted-foreground mb-2">Final Score</p>
-                  <p className="text-7xl font-black text-primary">{finalScore}</p>
+                  <p className="text-7xl font-black text-primary">{percentage}%</p>
                   <p className="text-lg text-muted-foreground mt-4">
-                    {finalScore}/{totalCards} ({percentage}% accuracy)
+                    {finalScore} correct out of {totalCards}
                   </p>
                 </div>
                 <ChevronDown className={`w-8 h-8 transition-transform absolute top-4 right-4 ${isOpen ? 'rotate-180' : ''}`} />
+
+                <CollapsibleContent className="mt-4">
+                  <div className="border-primary rounded-2xl p-4 space-y-2 max-h-64 overflow-y-auto">
+                    {results.map((result, index) => (
+                      <div
+                        key={index}
+                        className="flex items-center justify-between p-3 bg-secondary/20 rounded-lg hover:bg-secondary/30 transition-colors"
+                      >
+                        <div className="flex items-center gap-3">
+                          <button
+                            className="p-1 hover:bg-secondary/50 rounded transition-colors"
+                            onClick={(e) => handleVerbClick(result.verb, e)}
+                          >
+                            <Volume2 className="w-4 h-4 text-muted-foreground" />
+                          </button>
+                          <span className="font-bold text-foreground">{result.verb.infinitive}</span>
+                        </div>
+                        <span
+                          className={`w-3 h-3 rounded-full ${result.correct ? 'bg-green-500' : 'bg-red-500'
+                            }`}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </CollapsibleContent>
               </div>
             </CollapsibleTrigger>
-            <CollapsibleContent className="mt-4">
-              <div className="bg-card border-2 border-primary rounded-2xl p-4 space-y-2 max-h-64 overflow-y-auto">
-                {results.map((result, index) => (
-                  <div
-                    key={index}
-                    className="flex items-center justify-between p-3 bg-secondary/20 rounded-lg hover:bg-secondary/30 transition-colors"
-                  >
-                    <div className="flex items-center gap-3">
-                      <button
-                        className="p-1 hover:bg-secondary/50 rounded transition-colors"
-                        onClick={(e) => handleVerbClick(result.verb, e)}
-                      >
-                        <Volume2 className="w-4 h-4 text-muted-foreground" />
-                      </button>
-                      <span className="font-bold text-foreground">{result.verb.infinitive}</span>
-                    </div>
-                    <span
-                      className={`w-3 h-3 rounded-full ${
-                        result.correct ? 'bg-green-500' : 'bg-red-500'
-                      }`}
-                    />
-                  </div>
-                ))}
-              </div>
-            </CollapsibleContent>
           </Collapsible>
         </div>
 

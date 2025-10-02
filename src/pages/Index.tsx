@@ -251,7 +251,7 @@ const Index = () => {
   }
 
   return (
-    <div className="min-h-screen relative overflow-hidden flex flex-col">
+    <div className="h-screen relative overflow-hidden flex flex-col" style={{ touchAction: 'pan-x' }}>
       <ProgressIndicator totalCards={currentSessionVerbs.length} results={results} />
       <GameControls
         currentCategory={category}
@@ -276,9 +276,9 @@ const Index = () => {
         <RotateCcw className="w-5 h-5" />
       </Button>
 
-      <div className="flex-1 flex items-center justify-center pointer-events-none">
+      <div className="flex-1 flex items-center justify-center pointer-events-none" style={{ touchAction: 'pan-x' }}>
         <div className="pointer-events-auto">
-          <AnimatePresence mode="wait">
+          <AnimatePresence mode="popLayout">
             {currentVerb && (
               <CardPile
                 key={`pile-${currentIndex}`}
