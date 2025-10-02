@@ -1,6 +1,5 @@
 import { Languages } from "lucide-react";
-import { Switch } from "@/components/ui/switch";
-import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
 
 interface TranslationToggleProps {
   showTranslation: boolean;
@@ -9,16 +8,15 @@ interface TranslationToggleProps {
 
 export const TranslationToggle = ({ showTranslation, onToggle }: TranslationToggleProps) => {
   return (
-    <div className="fixed bottom-6 left-6 bg-card border-2 border-primary rounded-full px-6 py-3 shadow-lg flex items-center gap-3">
-      <Languages className="w-5 h-5 text-primary" />
-      <Label htmlFor="translation-toggle" className="font-bold text-sm cursor-pointer">
-        Translation
-      </Label>
-      <Switch
-        id="translation-toggle"
-        checked={showTranslation}
-        onCheckedChange={onToggle}
-      />
-    </div>
+    <Button
+      variant="outline"
+      size="icon"
+      onClick={() => onToggle(!showTranslation)}
+      className={`fixed top-6 right-6 border-2 ${
+        showTranslation ? 'bg-primary text-primary-foreground border-primary' : 'bg-card border-primary'
+      }`}
+    >
+      <Languages className="w-5 h-5" />
+    </Button>
   );
 };
