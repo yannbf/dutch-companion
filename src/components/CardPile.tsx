@@ -116,7 +116,7 @@ export const CardPile = ({
 
               {cardState === 1 && (
                 <div className="text-center space-y-4 w-full">
-                  <h3 className="text-3xl font-bold text-primary mb-6">Imperfectum</h3>
+                  <h3 className="text-3xl font-bold text-primary text-purple-400 mb-6">Imperfectum</h3>
                   {(!hideBackgroundText || isActive) && (
                     <>
                       <div className="space-y-3 text-left">
@@ -147,7 +147,7 @@ export const CardPile = ({
 
               {cardState === 2 && (
                 <div className="text-center space-y-4 w-full">
-                  <h3 className="text-3xl font-bold text-primary mb-6">Perfectum</h3>
+                  <h3 className="text-3xl font-bold text-primary text-blue-400 mb-6">Perfectum</h3>
                   {(!hideBackgroundText || isActive) && (
                     <>
                       <div className="space-y-3 text-left">
