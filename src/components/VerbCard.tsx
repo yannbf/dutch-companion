@@ -42,7 +42,9 @@ export const VerbCard = ({ verb, cardState, onFlip, onSwipe, showTranslation }: 
             {showTranslation && (
               <p className="text-2xl text-muted-foreground italic">{verb.translation}</p>
             )}
-            <p className="text-sm text-muted-foreground mt-8">Tap to flip • Swipe to score</p>
+            <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 w-full text-center">
+              <p className="text-sm text-muted-foreground">Tap to flip • Swipe to score</p>
+            </div>
           </div>
         )}
 
@@ -59,7 +61,7 @@ export const VerbCard = ({ verb, cardState, onFlip, onSwipe, showTranslation }: 
                 <span className="font-bold text-foreground">{verb.imperfectumPlural}</span>
               </p>
             </div>
-            <div 
+            <div
               className="mt-6 p-4 bg-secondary/50 rounded-lg cursor-pointer hover:bg-secondary/70 transition-colors"
               onClick={(e) => handleSentenceClick(verb.exampleImperfectum, e)}
             >
@@ -81,7 +83,7 @@ export const VerbCard = ({ verb, cardState, onFlip, onSwipe, showTranslation }: 
                 <span className="font-bold text-foreground">{verb.participium}</span>
               </p>
             </div>
-            <div 
+            <div
               className="mt-6 p-4 bg-secondary/50 rounded-lg cursor-pointer hover:bg-secondary/70 transition-colors"
               onClick={(e) => handleSentenceClick(verb.examplePerfectum, e)}
             >

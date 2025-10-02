@@ -13,13 +13,13 @@ interface CardPileProps {
   showTranslation: boolean;
 }
 
-export const CardPile = ({ 
-  verbs, 
-  currentIndex, 
-  cardState, 
-  onFlip, 
-  onSwipe, 
-  showTranslation 
+export const CardPile = ({
+  verbs,
+  currentIndex,
+  cardState,
+  onFlip,
+  onSwipe,
+  showTranslation
 }: CardPileProps) => {
   const x = useMotionValue(0);
   const rotate = useTransform(x, [-200, 200], [-25, 25]);
@@ -109,7 +109,9 @@ export const CardPile = ({
                     </>
                   )}
                   {isActive && (
-                    <p className="text-sm text-muted-foreground mt-8">Tap to flip • Swipe to score</p>
+                    <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 w-full text-center">
+                      <p className="text-sm text-muted-foreground">Tap to flip • Swipe to score</p>
+                    </div>
                   )}
                 </div>
               )}
