@@ -1,5 +1,6 @@
 import { motion, useMotionValue, useTransform, PanInfo } from "framer-motion";
 import { VerbCard as VerbCardType } from "@/data/verbs";
+import { speakerService } from "@/services/speaker";
 
 interface VerbCardProps {
   verb: VerbCardType;
@@ -20,6 +21,11 @@ export const VerbCard = ({ verb, cardState, onFlip, onSwipe, showTranslation }: 
     }
   };
 
+  const handleSentenceClick = (sentence: string, event: React.MouseEvent) => {
+    event.stopPropagation(); // Prevent card flip
+    speakerService.speak(sentence);
+  };
+
   return (
     <motion.div
       className="cursor-grab active:cursor-grabbing"
@@ -29,10 +35,10 @@ export const VerbCard = ({ verb, cardState, onFlip, onSwipe, showTranslation }: 
       onDragEnd={handleDragEnd}
       onClick={onFlip}
     >
-      <div className="w-full max-w-sm mx-4 h-96 bg-card border-2 border-primary rounded-2xl p-8 flex flex-col justify-center items-center shadow-2xl">
+      <div className="w-80 max-w-sm h-96 bg-card border-2 border-primary rounded-2xl p-8 flex flex-col justify-center items-center shadow-2xl">
         {cardState === 0 && (
           <div className="text-center space-y-6">
-            <h2 className="text-6xl font-black text-primary">{verb.infinitive}</h2>
+            <h2 className="text-5xl font-black text-primary">{verb.infinitive}</h2>
             {showTranslation && (
               <p className="text-2xl text-muted-foreground italic">{verb.translation}</p>
             )}
@@ -53,7 +59,10 @@ export const VerbCard = ({ verb, cardState, onFlip, onSwipe, showTranslation }: 
                 <span className="font-bold text-foreground">{verb.imperfectumPlural}</span>
               </p>
             </div>
-            <div className="mt-6 p-4 bg-secondary/50 rounded-lg">
+            <div 
+              className="mt-6 p-4 bg-secondary/50 rounded-lg cursor-pointer hover:bg-secondary/70 transition-colors"
+              onClick={(e) => handleSentenceClick(verb.exampleImperfectum, e)}
+            >
               <p className="text-sm italic text-foreground">{verb.exampleImperfectum}</p>
             </div>
           </div>
@@ -72,7 +81,10 @@ export const VerbCard = ({ verb, cardState, onFlip, onSwipe, showTranslation }: 
                 <span className="font-bold text-foreground">{verb.participium}</span>
               </p>
             </div>
-            <div className="mt-6 p-4 bg-secondary/50 rounded-lg">
+            <div 
+              className="mt-6 p-4 bg-secondary/50 rounded-lg cursor-pointer hover:bg-secondary/70 transition-colors"
+              onClick={(e) => handleSentenceClick(verb.examplePerfectum, e)}
+            >
               <p className="text-sm italic text-foreground">{verb.examplePerfectum}</p>
             </div>
           </div>

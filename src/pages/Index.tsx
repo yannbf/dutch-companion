@@ -1,30 +1,65 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { AnimatePresence } from "framer-motion";
 import { verbData, VerbCard } from "@/data/verbs";
 import { VerbCard as VerbCardComponent } from "@/components/VerbCard";
 import { PointTracker } from "@/components/PointTracker";
-import { CategoryFilter } from "@/components/CategoryFilter";
-import { TranslationToggle } from "@/components/TranslationToggle";
-import { ModeSelector } from "@/components/ModeSelector";
+import { GameControls } from "@/components/GameControls";
 import { SummaryScreen } from "@/components/SummaryScreen";
+import { ProgressIndicator } from "@/components/ProgressIndicator";
 import { Button } from "@/components/ui/button";
 import { RotateCcw } from "lucide-react";
+import { speakerService } from "@/services/speaker";
 
 interface VerbResult {
   verb: VerbCard;
   correct: boolean;
 }
 
+// Load settings from localStorage
+const loadSettings = () => {
+  const defaultSettings = {
+    showTranslation: false,
+    category: "all" as "all" | "hebben" | "zijn" | "hebben/zijn",
+    mode: "short" as "short" | "long",
+    randomMode: false,
+    voiceMode: false,
+  };
+
+  try {
+    const saved = localStorage.getItem('taal-boost-settings');
+    if (saved) {
+      return { ...defaultSettings, ...JSON.parse(saved) };
+    }
+  } catch (error) {
+    console.warn('Failed to load settings from localStorage:', error);
+  }
+  
+  return defaultSettings;
+};
+
+// Save settings to localStorage
+const saveSettings = (settings: any) => {
+  try {
+    localStorage.setItem('taal-boost-settings', JSON.stringify(settings));
+  } catch (error) {
+    console.warn('Failed to save settings to localStorage:', error);
+  }
+};
+
 const Index = () => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [cardState, setCardState] = useState<0 | 1 | 2>(0);
   const [points, setPoints] = useState(0);
-  const [showTranslation, setShowTranslation] = useState(false);
-  const [category, setCategory] = useState<"all" | "hebben" | "zijn" | "hebben/zijn">("all");
-  const [mode, setMode] = useState<"short" | "long">("short");
+  const [showTranslation, setShowTranslation] = useState(loadSettings().showTranslation);
+  const [category, setCategory] = useState<"all" | "hebben" | "zijn" | "hebben/zijn">(loadSettings().category);
+  const [mode, setMode] = useState<"short" | "long">(loadSettings().mode);
+  const [randomMode, setRandomMode] = useState(loadSettings().randomMode);
+  const [voiceMode, setVoiceMode] = useState(loadSettings().voiceMode);
   const [showSummary, setShowSummary] = useState(false);
   const [results, setResults] = useState<VerbResult[]>([]);
   const [sessionVerbs, setSessionVerbs] = useState<VerbCard[]>([]);
+  const [spokenWords, setSpokenWords] = useState<Set<string>>(new Set());
+  const [lastResult, setLastResult] = useState<"correct" | "incorrect" | null>(null);
 
   const filteredVerbs = useMemo(() => {
     if (category === "all") return verbData;
@@ -34,16 +69,30 @@ const Index = () => {
   const currentSessionVerbs = useMemo(() => {
     if (sessionVerbs.length > 0) return sessionVerbs;
     
-    const verbs = filteredVerbs;
+    let verbs = filteredVerbs;
+    
+    // Apply random mode if enabled
+    if (randomMode) {
+      verbs = [...verbs].sort(() => Math.random() - 0.5);
+    }
+    
     if (mode === "short") {
       // Get 10 random verbs
       const shuffled = [...verbs].sort(() => Math.random() - 0.5);
       return shuffled.slice(0, Math.min(10, shuffled.length));
     }
     return verbs;
-  }, [filteredVerbs, mode, sessionVerbs]);
+  }, [filteredVerbs, mode, sessionVerbs, randomMode]);
 
   const currentVerb = currentSessionVerbs[currentIndex];
+
+  // Voice mode effect - speak when card changes (only once per session)
+  useEffect(() => {
+    if (voiceMode && currentVerb && cardState === 0 && !spokenWords.has(currentVerb.infinitive)) {
+      speakerService.speak(currentVerb.infinitive);
+      setSpokenWords(prev => new Set(prev).add(currentVerb.infinitive));
+    }
+  }, [currentVerb, cardState, voiceMode, spokenWords]);
 
   const handleFlip = () => {
     setCardState((prev) => ((prev + 1) % 3) as 0 | 1 | 2);
@@ -57,6 +106,9 @@ const Index = () => {
     } else {
       setPoints((prev) => prev - 1);
     }
+
+    // Set last result for score flash
+    setLastResult(isCorrect ? "correct" : "incorrect");
 
     // Track result
     setResults((prev) => [...prev, { verb: currentVerb, correct: isCorrect }]);
@@ -77,8 +129,22 @@ const Index = () => {
     setPoints(0);
     setShowSummary(false);
     setCategory("all");
+    setMode("short");
+    setRandomMode(false);
+    setVoiceMode(false);
+    setShowTranslation(false);
     setResults([]);
     setSessionVerbs([]);
+    setSpokenWords(new Set());
+    setLastResult(null);
+    // Save reset settings
+    saveSettings({
+      showTranslation: false,
+      category: "all",
+      mode: "short",
+      randomMode: false,
+      voiceMode: false,
+    });
   };
 
   const handleRetry = () => {
@@ -86,6 +152,12 @@ const Index = () => {
     setCardState(0);
     setPoints(0);
     setResults([]);
+    setSpokenWords(new Set());
+    setLastResult(null);
+    // If random mode is enabled, reshuffle the session verbs
+    if (randomMode) {
+      setSessionVerbs([]);
+    }
   };
 
   const handleCategoryChange = (newCategory: "all" | "hebben" | "zijn" | "hebben/zijn") => {
@@ -95,6 +167,15 @@ const Index = () => {
     setPoints(0);
     setResults([]);
     setSessionVerbs([]);
+    setSpokenWords(new Set());
+    // Save settings
+    saveSettings({
+      showTranslation,
+      category: newCategory,
+      mode,
+      randomMode,
+      voiceMode,
+    });
   };
 
   const handleModeChange = (newMode: "short" | "long") => {
@@ -104,12 +185,64 @@ const Index = () => {
     setPoints(0);
     setResults([]);
     setSessionVerbs([]);
+    setSpokenWords(new Set());
+    // Save settings
+    saveSettings({
+      showTranslation,
+      category,
+      mode: newMode,
+      randomMode,
+      voiceMode,
+    });
+  };
+
+  const handleRandomModeToggle = (random: boolean) => {
+    setRandomMode(random);
+    setCurrentIndex(0);
+    setCardState(0);
+    setPoints(0);
+    setResults([]);
+    setSessionVerbs([]);
+    setSpokenWords(new Set());
+    // Save settings
+    saveSettings({
+      showTranslation,
+      category,
+      mode,
+      randomMode: random,
+      voiceMode,
+    });
+  };
+
+  const handleVoiceModeToggle = (voice: boolean) => {
+    setVoiceMode(voice);
+    // Save settings
+    saveSettings({
+      showTranslation,
+      category,
+      mode,
+      randomMode,
+      voiceMode: voice,
+    });
+  };
+
+  const handleTranslationToggle = (show: boolean) => {
+    setShowTranslation(show);
+    // Save settings
+    saveSettings({
+      showTranslation: show,
+      category,
+      mode,
+      randomMode,
+      voiceMode,
+    });
   };
 
   if (showSummary) {
+    const correctAnswers = results.filter(result => result.correct).length;
     return (
       <SummaryScreen
-        finalScore={points}
+        finalScore={correctAnswers}
         totalCards={currentSessionVerbs.length}
         onRestart={handleRestart}
         results={results}
@@ -119,16 +252,26 @@ const Index = () => {
 
   return (
     <div className="min-h-screen relative overflow-hidden flex flex-col">
-      <CategoryFilter currentCategory={category} onCategoryChange={handleCategoryChange} />
-      <ModeSelector currentMode={mode} onModeChange={handleModeChange} />
-      <PointTracker points={points} />
-      <TranslationToggle showTranslation={showTranslation} onToggle={setShowTranslation} />
+      <ProgressIndicator totalCards={currentSessionVerbs.length} results={results} />
+      <GameControls
+        currentCategory={category}
+        onCategoryChange={handleCategoryChange}
+        currentMode={mode}
+        onModeChange={handleModeChange}
+        showTranslation={showTranslation}
+        onTranslationToggle={handleTranslationToggle}
+        randomMode={randomMode}
+        onRandomModeToggle={handleRandomModeToggle}
+        voiceMode={voiceMode}
+        onVoiceModeToggle={handleVoiceModeToggle}
+      />
+      <PointTracker points={points} lastResult={lastResult} />
       
       <Button
         variant="outline"
         size="icon"
         onClick={handleRetry}
-        className="fixed top-20 right-6 bg-card border-2 border-primary font-bold"
+        className="fixed bottom-6 left-6 bg-card border-2 border-primary font-bold"
       >
         <RotateCcw className="w-5 h-5" />
       </Button>

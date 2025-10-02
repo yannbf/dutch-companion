@@ -8,6 +8,7 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 import { useState } from "react";
+import { speakerService } from "@/services/speaker";
 
 interface VerbResult {
   verb: VerbCard;
@@ -24,6 +25,10 @@ interface SummaryScreenProps {
 export const SummaryScreen = ({ finalScore, totalCards, onRestart, results }: SummaryScreenProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const percentage = Math.round((finalScore / totalCards) * 100);
+
+  const handleVerbClick = (verb: VerbCard) => {
+    speakerService.speak(verb.infinitive);
+  };
 
   return (
     <motion.div
@@ -44,32 +49,26 @@ export const SummaryScreen = ({ finalScore, totalCards, onRestart, results }: Su
         <h1 className="text-5xl font-black text-foreground">Session Complete!</h1>
 
         <div className="space-y-4">
-          <div className="bg-card border-2 border-primary rounded-2xl p-8">
-            <p className="text-sm text-muted-foreground mb-2">Final Score</p>
-            <p className="text-7xl font-black text-primary">{finalScore}</p>
-            <p className="text-lg text-muted-foreground mt-4">
-              {percentage}% accuracy
-            </p>
-          </div>
-
-          <div className="bg-card border-2 border-secondary rounded-2xl p-6">
-            <p className="text-muted-foreground">Cards reviewed</p>
-            <p className="text-3xl font-bold text-foreground">{totalCards}</p>
-          </div>
-
           <Collapsible open={isOpen} onOpenChange={setIsOpen} className="w-full">
             <CollapsibleTrigger asChild>
-              <Button variant="outline" className="w-full gap-2 border-2 border-primary font-bold">
-                View Detailed Results
-                <ChevronDown className={`w-4 h-4 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
-              </Button>
+              <div className="bg-card border-2 border-primary rounded-2xl p-8 cursor-pointer hover:bg-primary/5 transition-colors relative">
+                <div className="text-center">
+                  <p className="text-sm text-muted-foreground mb-2">Final Score</p>
+                  <p className="text-7xl font-black text-primary">{finalScore}</p>
+                  <p className="text-lg text-muted-foreground mt-4">
+                    {finalScore}/{totalCards} ({percentage}% accuracy)
+                  </p>
+                </div>
+                <ChevronDown className={`w-8 h-8 transition-transform absolute top-4 right-4 ${isOpen ? 'rotate-180' : ''}`} />
+              </div>
             </CollapsibleTrigger>
             <CollapsibleContent className="mt-4">
               <div className="bg-card border-2 border-primary rounded-2xl p-4 space-y-2 max-h-64 overflow-y-auto">
                 {results.map((result, index) => (
                   <div
                     key={index}
-                    className="flex items-center justify-between p-3 bg-secondary/20 rounded-lg"
+                    className="flex items-center justify-between p-3 bg-secondary/20 rounded-lg cursor-pointer hover:bg-secondary/30 transition-colors"
+                    onClick={() => handleVerbClick(result.verb)}
                   >
                     <span className="font-bold text-foreground">{result.verb.infinitive}</span>
                     <span
