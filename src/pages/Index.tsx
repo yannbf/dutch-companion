@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import { AnimatePresence } from "framer-motion";
 import { verbData, VerbCard } from "@/data/verbs";
 import { CardPile } from "@/components/CardPile";
@@ -18,11 +18,11 @@ interface VerbResult {
 // Load settings from localStorage
 const loadSettings = () => {
   const defaultSettings = {
-    showTranslation: false,
+    showTranslation: true,
     category: "all" as "all" | "hebben" | "zijn" | "hebben/zijn",
     mode: "short" as "short" | "long",
     randomMode: false,
-    voiceMode: false,
+    voiceMode: true,
   };
 
   try {
@@ -38,7 +38,13 @@ const loadSettings = () => {
 };
 
 // Save settings to localStorage
-const saveSettings = (settings: any) => {
+const saveSettings = (settings: {
+  showTranslation: boolean;
+  category: "all" | "hebben" | "zijn" | "hebben/zijn";
+  mode: "short" | "long";
+  randomMode: boolean;
+  voiceMode: boolean;
+}) => {
   try {
     localStorage.setItem('taal-boost-settings', JSON.stringify(settings));
   } catch (error) {
@@ -60,6 +66,8 @@ const Index = () => {
   const [sessionVerbs, setSessionVerbs] = useState<VerbCard[]>([]);
   const [spokenWords, setSpokenWords] = useState<Set<string>>(new Set());
   const [lastResult, setLastResult] = useState<"correct" | "incorrect" | null>(null);
+  const lastSpeechTime = useRef<number>(0);
+  const speechTimeout = useRef<NodeJS.Timeout | null>(null);
 
   const filteredVerbs = useMemo(() => {
     if (category === "all") return verbData;
@@ -86,21 +94,54 @@ const Index = () => {
 
   const currentVerb = currentSessionVerbs[currentIndex];
 
+  // Debounced speak function to prevent rapid speech requests
+  const debouncedSpeak = (word: string) => {
+    const now = Date.now();
+    const timeSinceLastSpeech = now - lastSpeechTime.current;
+
+    // Minimum 300ms between speech requests to prevent overlapping
+    if (timeSinceLastSpeech < 300) {
+      // Cancel any pending speech timeout
+      if (speechTimeout.current) {
+        clearTimeout(speechTimeout.current);
+      }
+
+      // Schedule speech after the minimum delay
+      speechTimeout.current = setTimeout(() => {
+        speakerService.speak(word);
+        lastSpeechTime.current = Date.now();
+      }, 300 - timeSinceLastSpeech);
+    } else {
+      // Enough time has passed, speak immediately
+      speakerService.speak(word);
+      lastSpeechTime.current = now;
+    }
+  };
+
   // Voice mode effect - speak when card changes
   useEffect(() => {
     if (voiceMode && currentVerb) {
       if (cardState === 0) {
         // Speak infinitive
-        speakerService.speak(currentVerb.infinitive);
+        debouncedSpeak(currentVerb.infinitive);
       } else if (cardState === 1) {
         // Speak imperfectum singularis
-        speakerService.speak(currentVerb.imperfectumSingular);
+        debouncedSpeak(currentVerb.imperfectumSingular);
       } else if (cardState === 2) {
         // Speak perfectum participium
-        speakerService.speak(currentVerb.participium);
+        debouncedSpeak(currentVerb.participium);
       }
     }
   }, [cardState, currentVerb, voiceMode]);
+
+  // Cleanup timeout on unmount or when voice mode is disabled
+  useEffect(() => {
+    return () => {
+      if (speechTimeout.current) {
+        clearTimeout(speechTimeout.current);
+      }
+    };
+  }, [voiceMode]);
 
   const handleFlip = () => {
     setCardState((prev) => ((prev + 1) % 3) as 0 | 1 | 2);
@@ -136,23 +177,16 @@ const Index = () => {
     setCardState(0);
     setPoints(0);
     setShowSummary(false);
-    setCategory("all");
-    setMode("short");
-    setRandomMode(false);
-    setVoiceMode(false);
-    setShowTranslation(false);
     setResults([]);
     setSessionVerbs([]);
     setSpokenWords(new Set());
     setLastResult(null);
-    // Save reset settings
-    saveSettings({
-      showTranslation: false,
-      category: "all",
-      mode: "short",
-      randomMode: false,
-      voiceMode: false,
-    });
+    // Cancel any pending speech
+    if (speechTimeout.current) {
+      clearTimeout(speechTimeout.current);
+      speechTimeout.current = null;
+    }
+    lastSpeechTime.current = 0;
   };
 
   const handleRetry = () => {
@@ -162,6 +196,12 @@ const Index = () => {
     setResults([]);
     setSpokenWords(new Set());
     setLastResult(null);
+    // Cancel any pending speech
+    if (speechTimeout.current) {
+      clearTimeout(speechTimeout.current);
+      speechTimeout.current = null;
+    }
+    lastSpeechTime.current = 0;
     // If random mode is enabled, reshuffle the session verbs
     if (randomMode) {
       setSessionVerbs([]);
