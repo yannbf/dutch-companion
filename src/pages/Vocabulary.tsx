@@ -1,15 +1,32 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { vocabularyData } from "@/data/vocabulary";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Volume2 } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Volume2, Search } from "lucide-react";
 import { speakerService } from "@/services/speaker";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 const Vocabulary = () => {
   const [selectedChapter, setSelectedChapter] = useState(vocabularyData[0].id);
-  
+  const [searchTerm, setSearchTerm] = useState("");
+
   const currentChapter = vocabularyData.find(ch => ch.id === selectedChapter) || vocabularyData[0];
+
+  // Filter words based on search term
+  const filteredWords = useMemo(() => {
+    if (!searchTerm.trim()) {
+      return currentChapter.words;
+    }
+
+    const searchLower = searchTerm.toLowerCase();
+    return currentChapter.words.filter(word =>
+      word.word.toLowerCase().includes(searchLower) ||
+      word.translation.toLowerCase().includes(searchLower) ||
+      word.exampleSentence.toLowerCase().includes(searchLower) ||
+      (word.article && word.article.toLowerCase().includes(searchLower))
+    );
+  }, [currentChapter.words, searchTerm]);
 
   const handleSpeak = (text: string) => {
     speakerService.speak(text);
@@ -27,14 +44,27 @@ const Vocabulary = () => {
           <SelectContent>
             {vocabularyData.map(chapter => (
               <SelectItem key={chapter.id} value={chapter.id}>
-                {chapter.title}
+                {chapter.title} ({chapter.words.length} words)
               </SelectItem>
             ))}
           </SelectContent>
         </Select>
 
+        <div className="mb-6">
+          <div className="relative">
+            <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Search vocabulary..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10"
+            />
+          </div>
+        </div>
+
         <div className="space-y-4">
-          {currentChapter.words.map((word, idx) => (
+          {filteredWords.length > 0 ? (
+            filteredWords.map((word, idx) => (
             <Card key={idx}>
               <CardHeader>
                 <CardTitle className="text-lg flex items-center justify-between">
@@ -62,7 +92,16 @@ const Vocabulary = () => {
                 </div>
               </CardContent>
             </Card>
-          ))}
+            ))
+          ) : (
+            <Card>
+              <CardContent className="py-8">
+                <p className="text-center text-muted-foreground">
+                  No vocabulary words found matching "{searchTerm}"
+                </p>
+              </CardContent>
+            </Card>
+          )}
         </div>
       </div>
     </div>
