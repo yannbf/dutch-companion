@@ -3,7 +3,9 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import Exercises from "./pages/Exercises";
 import Verbs from "./pages/Verbs";
+import VocabularyFlashcards from "./pages/VocabularyFlashcards";
 import Vocabulary from "./pages/Vocabulary";
 import NotFound from "./pages/NotFound";
 import { BottomNav } from "./components/BottomNav";
@@ -17,8 +19,10 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <Routes>
-          <Route path="/" element={<Navigate to="/verbs" replace />} />
-          <Route path="/verbs" element={<Verbs />} />
+          <Route path="/" element={<Navigate to="/exercises" replace />} />
+          <Route path="/exercises" element={<Exercises />} />
+          <Route path="/exercises/verbs" element={<Verbs />} />
+          <Route path="/exercises/vocabulary" element={<VocabularyFlashcards />} />
           <Route path="/vocabulary" element={<Vocabulary />} />
           <Route path="*" element={<NotFound />} />
         </Routes>

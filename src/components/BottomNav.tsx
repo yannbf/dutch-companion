@@ -6,7 +6,7 @@ export const BottomNav = () => {
     <nav className="fixed bottom-0 left-0 right-0 bg-card border-t border-border z-50 safe-bottom">
       <div className="flex justify-around items-center h-16 max-w-md mx-auto">
         <NavLink
-          to="/verbs"
+          to="/exercises"
           className={({ isActive }) =>
             `flex flex-col items-center justify-center flex-1 h-full transition-colors ${
               isActive
@@ -16,7 +16,7 @@ export const BottomNav = () => {
           }
         >
           <GraduationCap className="w-6 h-6 mb-1" />
-          <span className="text-xs font-medium">Verbs</span>
+          <span className="text-xs font-medium">Exercises</span>
         </NavLink>
 
         <NavLink

@@ -7,6 +7,7 @@ export interface VocabularyWord {
 }
 
 export interface VocabularyChapter {
+  chapter: number;
   id: string;
   title: string;
   words: VocabularyWord[];
@@ -14,6 +15,7 @@ export interface VocabularyChapter {
 
 export const vocabularyData: VocabularyChapter[] = [
   {
+    chapter: 1,
     id: "chapter-1",
     title: "Hoofdstuk 1",
     words: [
@@ -180,6 +182,7 @@ export const vocabularyData: VocabularyChapter[] = [
     ],
   },
   {
+    chapter: 2,
     id: "chapter-2",
     title: "Hoofdstuk 2",
     words: [
@@ -198,6 +201,7 @@ export const vocabularyData: VocabularyChapter[] = [
     ],
   },
   {
+    chapter: 3,
     id: "chapter-3",
     title: "Hoofdstuk 3",
     words: [
