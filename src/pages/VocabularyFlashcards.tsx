@@ -1,12 +1,36 @@
 import { useState, useMemo, useEffect } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { vocabularyData } from "@/data/vocabulary";
+import { vocabularyData, VocabularyWord } from "@/data/vocabulary";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Volume2, RotateCcw } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { speakerService } from "@/services/speaker";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
+
+// Extended word interface for favorites with chapter info
+interface VocabularyWordWithChapter extends VocabularyWord {
+  chapterId: string;
+  chapterTitle: string;
+}
+
+// Custom hook for managing favorites (shared with Vocabulary page)
+const useFavorites = () => {
+  const [favorites, setFavorites] = useState<Set<string>>(() => {
+    const stored = localStorage.getItem('vocabulary-favorites');
+    return stored ? new Set(JSON.parse(stored)) : new Set();
+  });
+
+  const isFavorite = (wordId: string) => favorites.has(wordId);
+
+  const getFavoriteWords = (): VocabularyWordWithChapter[] => {
+    return vocabularyData
+      .flatMap(chapter => chapter.words.map(word => ({ ...word, chapterId: chapter.id, chapterTitle: chapter.title })))
+      .filter(word => favorites.has(word.word));
+  };
+
+  return { isFavorite, getFavoriteWords };
+};
 
 interface VocabResult {
   word: string;
@@ -16,23 +40,40 @@ interface VocabResult {
 const VocabularyFlashcards = () => {
   const navigate = useNavigate();
   const [selectedChapters, setSelectedChapters] = useState<number[]>([1, 2, 3]);
+  const [includeFavorites, setIncludeFavorites] = useState(false);
   const [gameStarted, setGameStarted] = useState(false);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isFlipped, setIsFlipped] = useState(false);
   const [points, setPoints] = useState(0);
   const [results, setResults] = useState<VocabResult[]>([]);
   const [showSummary, setShowSummary] = useState(false);
+  const { getFavoriteWords } = useFavorites();
 
   const sessionWords = useMemo(() => {
     if (!gameStarted) return [];
-    
-    const words = vocabularyData
-      .filter((item) => selectedChapters.includes(item.chapter))
-      .flatMap((chapter) => chapter.words);
-    
+
+    let words = [];
+
+    // Add words from selected chapters
+    if (selectedChapters.length > 0) {
+      words.push(...vocabularyData
+        .filter((item) => selectedChapters.includes(item.chapter))
+        .flatMap((chapter) => chapter.words));
+    }
+
+    // Add favorite words if selected
+    if (includeFavorites) {
+      words.push(...getFavoriteWords());
+    }
+
+    // Remove duplicates (in case a favorite word is also in a selected chapter)
+    const uniqueWords = words.filter((word, index, self) =>
+      index === self.findIndex(w => w.word === word.word)
+    );
+
     // Shuffle words
-    return [...words].sort(() => Math.random() - 0.5);
-  }, [selectedChapters, gameStarted]);
+    return [...uniqueWords].sort(() => Math.random() - 0.5);
+  }, [selectedChapters, includeFavorites, gameStarted]);
 
   const currentWord = sessionWords[currentIndex];
 
@@ -44,8 +85,12 @@ const VocabularyFlashcards = () => {
     );
   };
 
+  const handleFavoritesToggle = () => {
+    setIncludeFavorites((prev) => !prev);
+  };
+
   const handleStartGame = () => {
-    if (selectedChapters.length === 0) return;
+    if (selectedChapters.length === 0 && !includeFavorites) return;
     setGameStarted(true);
     setCurrentIndex(0);
     setIsFlipped(false);
@@ -124,9 +169,22 @@ const VocabularyFlashcards = () => {
               </div>
             </div>
 
+            <div className="border-t pt-4">
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="include-favorites"
+                  checked={includeFavorites}
+                  onCheckedChange={handleFavoritesToggle}
+                />
+                <Label htmlFor="include-favorites" className="cursor-pointer">
+                  Include Favorites ({getFavoriteWords().length} words)
+                </Label>
+              </div>
+            </div>
+
             <Button
               onClick={handleStartGame}
-              disabled={selectedChapters.length === 0}
+              disabled={selectedChapters.length === 0 && !includeFavorites}
               className="w-full"
             >
               Start Game
