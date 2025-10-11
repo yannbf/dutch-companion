@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useCallback } from "react";
 import { vocabularyData, VocabularyWord } from "@/data/vocabulary";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -20,7 +20,7 @@ const useFavorites = () => {
     return stored ? new Set(JSON.parse(stored)) : new Set();
   });
 
-  const toggleFavorite = (wordId: string) => {
+  const toggleFavorite = useCallback((wordId: string) => {
     const newFavorites = new Set(favorites);
     if (newFavorites.has(wordId)) {
       newFavorites.delete(wordId);
@@ -29,15 +29,15 @@ const useFavorites = () => {
     }
     setFavorites(newFavorites);
     localStorage.setItem('vocabulary-favorites', JSON.stringify([...newFavorites]));
-  };
+  }, [favorites]);
 
-  const isFavorite = (wordId: string) => favorites.has(wordId);
+  const isFavorite = useCallback((wordId: string) => favorites.has(wordId), [favorites]);
 
-  const getFavoriteWords = (): VocabularyWordWithChapter[] => {
+  const getFavoriteWords = useCallback((): VocabularyWordWithChapter[] => {
     return vocabularyData
       .flatMap(chapter => chapter.words.map(word => ({ ...word, chapterId: chapter.id, chapterTitle: chapter.title })))
       .filter(word => favorites.has(word.word));
-  };
+  }, [favorites]);
 
   return { favorites, toggleFavorite, isFavorite, getFavoriteWords };
 };

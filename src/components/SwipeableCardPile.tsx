@@ -2,7 +2,7 @@ import { motion, useMotionValue, useTransform, PanInfo } from "framer-motion";
 import { speakerService } from "@/services/speaker";
 import { hapticService } from "@/services/haptic";
 import { Volume2 } from "lucide-react";
-import { useState, useEffect, ReactNode } from "react";
+import { useState, useEffect, useMemo, ReactNode } from "react";
 
 export interface CardState {
   id: string;
@@ -18,10 +18,12 @@ export interface CardContent {
 interface SwipeableCardPileProps<T extends CardContent> {
   cards: T[];
   currentIndex: number;
-  currentState: number;
-  onFlip: () => void;
+  currentState?: number;
+  onFlip?: () => void;
   onSwipe: (direction: "left" | "right") => void;
   onCardChange?: (card: T) => void;
+  onPileComplete?: () => void;
+  autoManageStates?: boolean;
   className?: string;
   cardWidth?: number;
   cardHeight?: number;
@@ -30,16 +32,48 @@ interface SwipeableCardPileProps<T extends CardContent> {
 
 export function SwipeableCardPile<T extends CardContent>({
   cards,
-  currentIndex,
-  currentState,
-  onFlip,
+  currentIndex: externalCurrentIndex,
+  currentState: externalCurrentState,
+  onFlip: externalOnFlip,
   onSwipe,
   onCardChange,
+  onPileComplete,
+  autoManageStates = false,
   className = "relative w-80 h-96",
   cardWidth = 320,
   cardHeight = 384,
   maxVisibleCards = 3,
 }: SwipeableCardPileProps<T>) {
+  // Internal state management when autoManageStates is true
+  const [internalCurrentIndex, setInternalCurrentIndex] = useState(0);
+  const [internalCurrentState, setInternalCurrentState] = useState(0);
+
+  // Use external state if provided, otherwise use internal state
+  const currentIndex = autoManageStates ? internalCurrentIndex : (externalCurrentIndex ?? 0);
+  const currentState = autoManageStates ? internalCurrentState : (externalCurrentState ?? 0);
+
+  // Memoize the current index to use for effects
+  const currentIndexToUse = autoManageStates ? internalCurrentIndex : (externalCurrentIndex ?? 0);
+
+  const onFlip = autoManageStates ? () => {
+    setInternalCurrentState(prev => (prev + 1) % cards[currentIndexToUse]?.states.length);
+  } : externalOnFlip;
+
+  // Handle pile completion when autoManageStates is true
+  const handleSwipeWithCompletion = (direction: "left" | "right") => {
+    onSwipe(direction);
+
+    if (autoManageStates) {
+      if (internalCurrentIndex >= cards.length - 1) {
+        // This was the last card in the pile
+        onPileComplete?.();
+      } else {
+        // Move to next card
+        setInternalCurrentIndex(prev => prev + 1);
+        setInternalCurrentState(0); // Reset card state for new card
+      }
+    }
+  };
   const x = useMotionValue(0);
   const rotate = useTransform(x, [-200, 200], [-25, 25]);
   const opacity = useTransform(x, [-200, -100, 0, 100, 200], [0, 1, 1, 1, 0]);
@@ -52,20 +86,24 @@ export function SwipeableCardPile<T extends CardContent>({
       setHideBackgroundText(false);
     }, 200);
     return () => clearTimeout(timer);
-  }, [currentIndex]);
+  }, [currentIndexToUse]);
 
   // Notify parent when card changes
   useEffect(() => {
-    if (cards[currentIndex]) {
-      onCardChange?.(cards[currentIndex]);
+    if (cards[currentIndexToUse]) {
+      onCardChange?.(cards[currentIndexToUse]);
     }
-  }, [currentIndex, cards, onCardChange]);
+  }, [currentIndexToUse, cards, onCardChange]);
 
   const handleDragEnd = (event: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
     if (Math.abs(info.offset.x) > 100) {
       // Provide haptic feedback for swipe
       hapticService.medium();
-      onSwipe(info.offset.x > 0 ? "right" : "left");
+      if (autoManageStates) {
+        handleSwipeWithCompletion(info.offset.x > 0 ? "right" : "left");
+      } else {
+        onSwipe(info.offset.x > 0 ? "right" : "left");
+      }
     }
   };
 
@@ -85,8 +123,8 @@ export function SwipeableCardPile<T extends CardContent>({
   // Get the next cards to show in the pile
   const getVisibleCards = () => {
     const visibleCards = [];
-    for (let i = 0; i < Math.min(maxVisibleCards, cards.length - currentIndex); i++) {
-      const cardIndex = currentIndex + i;
+    for (let i = 0; i < Math.min(maxVisibleCards, cards.length - currentIndexToUse); i++) {
+      const cardIndex = currentIndexToUse + i;
       if (cardIndex < cards.length) {
         visibleCards.push({
           card: cards[cardIndex],
@@ -99,30 +137,30 @@ export function SwipeableCardPile<T extends CardContent>({
   };
 
   const visibleCards = getVisibleCards();
-  const currentCard = visibleCards[0]?.card;
 
-  if (!currentCard) return null;
-
-  const currentCardState = currentCard.states[currentState];
+  if (visibleCards.length === 0) return null;
 
   return (
-    <div className={`${className} relative`} style={{ isolation: 'isolate', width: cardWidth, height: cardHeight }}>
+    <div className={`${className} relative`} style={{ isolation: 'isolate', width: cardWidth, height: cardHeight, backgroundColor: 'transparent' }}>
       {visibleCards.map(({ card, index, isActive }) => {
         const scale = 1 - (index * 0.05); // Each card is 5% smaller
         const translateY = index * 8; // Each card is 8px lower
         const translateX = index * 4; // Each card is 4px to the right
         const zIndex = 10 - index; // Much higher z-index for cards on top
 
+        // Ensure currentState is within bounds for this specific card
+        const safeCurrentState = Math.min(currentState, card.states.length - 1);
+        const cardStateContent = card.states[safeCurrentState];
+
         return (
           <motion.div
-            key={`${card.id}-${currentIndex + index}`}
+            key={`${card.id}-${currentIndexToUse + index}`}
             className={`absolute inset-0 ${isActive ? 'cursor-grab active:cursor-grabbing' : 'pointer-events-none'}`}
             style={{
               scale,
               translateY,
               translateX,
               zIndex,
-              opacity: isActive ? opacity : undefined,
               x: isActive ? x : undefined,
               rotate: isActive ? rotate : undefined,
               width: cardWidth,
@@ -132,12 +170,13 @@ export function SwipeableCardPile<T extends CardContent>({
             dragConstraints={isActive ? { left: 0, right: 0 } : undefined}
             onDragEnd={isActive ? handleDragEnd : undefined}
             onClick={isActive ? handleCardFlip : undefined}
-            initial={{ scale: 0.8, opacity: 0 }}
-            animate={{ scale, opacity }}
-            transition={{ duration: 0.2, delay: index * 0.05 }}
           >
-            <div className="w-full h-full bg-card border-2 border-primary rounded-2xl p-8 flex flex-col justify-center items-center shadow-2xl relative overflow-hidden" style={{ zIndex: zIndex + 1 }}>
-              {currentCardState?.content}
+            <div className="w-full h-full bg-card border-2 border-primary rounded-2xl p-8 flex flex-col justify-center items-center shadow-2xl relative overflow-hidden" style={{ zIndex: zIndex + 1, backgroundColor: 'hsl(var(--card))' }}>
+              {cardStateContent?.content || (
+                <div className="text-center space-y-6">
+                  <p className="text-muted-foreground">Card content unavailable</p>
+                </div>
+              )}
 
               {isActive && (
                 <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 w-full text-center">
@@ -145,10 +184,10 @@ export function SwipeableCardPile<T extends CardContent>({
                 </div>
               )}
 
-              {currentCardState?.audioText && isActive && (
+              {cardStateContent?.audioText && isActive && (
                 <button
                   className="absolute top-4 right-4 p-2 hover:bg-secondary/70 rounded-full transition-colors"
-                  onClick={(e) => handleSentenceClick(currentCardState.audioText!, e)}
+                  onClick={(e) => handleSentenceClick(cardStateContent.audioText!, e)}
                 >
                   <Volume2 className="w-4 h-4 text-muted-foreground" />
                 </button>

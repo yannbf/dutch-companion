@@ -1,12 +1,78 @@
-import { useState, useMemo, useEffect } from "react";
-import { AnimatePresence, motion } from "framer-motion";
+import { useState, useMemo, useEffect, useRef, useCallback } from "react";
+import { AnimatePresence } from "framer-motion";
 import { vocabularyData, VocabularyWord } from "@/data/vocabulary";
+import { SwipeableCardPile, CardContent, CardState } from "@/components/SwipeableCardPile";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Volume2, RotateCcw } from "lucide-react";
+import { ArrowLeft, RotateCcw } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { speakerService } from "@/services/speaker";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
+import { ReactNode } from "react";
+
+// Convert VocabularyWord to generic CardContent format
+const createVocabularyCardContent = (word: VocabularyWord): CardContent => ({
+  id: word.word,
+  states: [
+    {
+      id: "front",
+      content: (
+        <div className="text-center space-y-6">
+          <div className="space-y-2">
+            {word.article && (
+              <p className="text-2xl text-muted-foreground font-medium">{word.article}</p>
+            )}
+            <h2 className="text-3xl font-black text-primary">{word.word}</h2>
+          </div>
+        </div>
+      ) as ReactNode,
+    },
+    {
+      id: "back",
+      content: (
+        <div className="text-center space-y-6 w-full">
+          <div className="space-y-4">
+            <p className="text-2xl text-muted-foreground italic">{word.translation}</p>
+            <div className="pt-4 border-t">
+              <p className="text-sm text-muted-foreground mb-2">Example:</p>
+              <p className="italic text-lg">{word.exampleSentence}</p>
+            </div>
+          </div>
+        </div>
+      ) as ReactNode,
+      audioText: word.exampleSentence,
+    }
+  ]
+});
+
+interface VocabularyCardPileProps {
+  words: VocabularyWord[];
+  currentIndex: number;
+  cardState: 0 | 1; // 0: front, 1: back
+  onFlip: () => void;
+  onSwipe: (direction: "left" | "right") => void;
+}
+
+const VocabularyCardPile = ({
+  words,
+  currentIndex,
+  cardState,
+  onFlip,
+  onSwipe
+}: VocabularyCardPileProps) => {
+  // Convert words to generic card content format
+  const wordCards = words.map(word => createVocabularyCardContent(word));
+
+  return (
+    <SwipeableCardPile
+      cards={wordCards}
+      currentIndex={currentIndex}
+      currentState={cardState}
+      onFlip={onFlip}
+      onSwipe={onSwipe}
+    />
+  );
+};
 
 // Extended word interface for favorites with chapter info
 interface VocabularyWordWithChapter extends VocabularyWord {
@@ -21,13 +87,13 @@ const useFavorites = () => {
     return stored ? new Set(JSON.parse(stored)) : new Set();
   });
 
-  const isFavorite = (wordId: string) => favorites.has(wordId);
+  const isFavorite = useCallback((wordId: string) => favorites.has(wordId), [favorites]);
 
-  const getFavoriteWords = (): VocabularyWordWithChapter[] => {
+  const getFavoriteWords = useCallback((): VocabularyWordWithChapter[] => {
     return vocabularyData
       .flatMap(chapter => chapter.words.map(word => ({ ...word, chapterId: chapter.id, chapterTitle: chapter.title })))
       .filter(word => favorites.has(word.word));
-  };
+  }, [favorites]);
 
   return { isFavorite, getFavoriteWords };
 };
@@ -43,16 +109,20 @@ const VocabularyFlashcards = () => {
   const [includeFavorites, setIncludeFavorites] = useState(false);
   const [gameStarted, setGameStarted] = useState(false);
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [isFlipped, setIsFlipped] = useState(false);
+  const [cardState, setCardState] = useState<0 | 1>(0); // 0: front, 1: back
   const [points, setPoints] = useState(0);
+  const [gameKey, setGameKey] = useState(0);
   const [results, setResults] = useState<VocabResult[]>([]);
   const [showSummary, setShowSummary] = useState(false);
+  const [voiceMode, setVoiceMode] = useState(true);
   const { getFavoriteWords } = useFavorites();
+  const lastSpeechTime = useRef<number>(0);
+  const speechTimeout = useRef<NodeJS.Timeout | null>(null);
 
   const sessionWords = useMemo(() => {
     if (!gameStarted) return [];
 
-    let words = [];
+    const words = [];
 
     // Add words from selected chapters
     if (selectedChapters.length > 0) {
@@ -73,9 +143,56 @@ const VocabularyFlashcards = () => {
 
     // Shuffle words
     return [...uniqueWords].sort(() => Math.random() - 0.5);
-  }, [selectedChapters, includeFavorites, gameStarted]);
+  }, [selectedChapters, includeFavorites, gameStarted, getFavoriteWords]);
 
   const currentWord = sessionWords[currentIndex];
+
+  // Debounced speak function to prevent rapid speech requests
+  const debouncedSpeak = (word: string) => {
+    const now = Date.now();
+    const timeSinceLastSpeech = now - lastSpeechTime.current;
+
+    // Minimum 300ms between speech requests to prevent overlapping
+    if (timeSinceLastSpeech < 300) {
+      // Cancel any pending speech timeout
+      if (speechTimeout.current) {
+        clearTimeout(speechTimeout.current);
+      }
+
+      // Schedule speech after the minimum delay
+      speechTimeout.current = setTimeout(() => {
+        speakerService.speak(word);
+        lastSpeechTime.current = Date.now();
+      }, 300 - timeSinceLastSpeech);
+    } else {
+      // Enough time has passed, speak immediately
+      speakerService.speak(word);
+      lastSpeechTime.current = now;
+    }
+  };
+
+  // Voice mode effect - speak when card changes
+  useEffect(() => {
+    if (voiceMode && currentWord) {
+      if (cardState === 0) {
+        // Speak the word
+        debouncedSpeak(currentWord.word);
+      }
+    }
+  }, [cardState, currentWord, voiceMode]);
+
+  // Cleanup timeout on unmount or when voice mode is disabled
+  useEffect(() => {
+    return () => {
+      if (speechTimeout.current) {
+        clearTimeout(speechTimeout.current);
+      }
+    };
+  }, []);
+
+  const handleFlip = () => {
+    setCardState((prev) => (prev === 0 ? 1 : 0));
+  };
 
   const handleChapterToggle = (chapter: number) => {
     setSelectedChapters((prev) =>
@@ -92,48 +209,51 @@ const VocabularyFlashcards = () => {
   const handleStartGame = () => {
     if (selectedChapters.length === 0 && !includeFavorites) return;
     setGameStarted(true);
+    setGameKey(prev => prev + 1);
     setCurrentIndex(0);
-    setIsFlipped(false);
+    setCardState(0);
     setPoints(0);
     setResults([]);
     setShowSummary(false);
   };
 
-  const handleFlip = () => {
-    setIsFlipped(!isFlipped);
-  };
+  const handleSwipe = (direction: "left" | "right") => {
+    const correct = direction === "right";
 
-  const handleSpeak = (text: string) => {
-    speakerService.speak(text);
-  };
-
-  const handleSwipe = (correct: boolean) => {
     if (correct) {
       setPoints((prev) => prev + 1);
     }
 
     setResults((prev) => [...prev, { word: currentWord.word, correct }]);
 
+    // Reset card state and move to next card
+    setCardState(0);
+
     if (currentIndex + 1 >= sessionWords.length) {
       setShowSummary(true);
     } else {
       setCurrentIndex((prev) => prev + 1);
-      setIsFlipped(false);
     }
+  };
+
+  const handlePileComplete = () => {
+    setShowSummary(true);
   };
 
   const handleRestart = () => {
     setGameStarted(false);
+    setGameKey(prev => prev + 1);
     setCurrentIndex(0);
-    setIsFlipped(false);
+    setCardState(0);
     setPoints(0);
     setResults([]);
     setShowSummary(false);
   };
 
   const handleRetry = () => {
+    setGameKey(prev => prev + 1);
     setCurrentIndex(0);
-    setIsFlipped(false);
+    setCardState(0);
     setPoints(0);
     setResults([]);
     setShowSummary(false);
@@ -236,93 +356,19 @@ const VocabularyFlashcards = () => {
         <RotateCcw className="w-5 h-5" />
       </Button>
 
-      <div className="flex-1 flex items-center justify-center p-4">
-        <AnimatePresence mode="wait">
-          {currentWord && (
-            <motion.div
-              key={currentIndex}
-              initial={{ opacity: 0, scale: 0.8 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.8 }}
-              className="w-full max-w-md"
-            >
-              <motion.div
-                className="relative w-full aspect-[3/4] cursor-pointer"
-                onClick={handleFlip}
-                animate={{ rotateY: isFlipped ? 180 : 0 }}
-                transition={{ duration: 0.6 }}
-                style={{ transformStyle: "preserve-3d" }}
-              >
-                {/* Front of card */}
-                <div
-                  className="absolute inset-0 bg-card border-2 border-primary rounded-2xl p-8 flex flex-col items-center justify-center"
-                  style={{
-                    backfaceVisibility: "hidden",
-                  }}
-                >
-                  <h2 className="text-4xl font-bold text-center mb-4">{currentWord.word}</h2>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleSpeak(currentWord.word);
-                    }}
-                  >
-                    <Volume2 className="w-6 h-6" />
-                  </Button>
-                </div>
-
-                {/* Back of card */}
-                <div
-                  className="absolute inset-0 bg-card border-2 border-primary rounded-2xl p-8 flex flex-col items-center justify-center"
-                  style={{
-                    backfaceVisibility: "hidden",
-                    transform: "rotateY(180deg)",
-                  }}
-                >
-                  <div className="text-center space-y-4">
-                    <p className="text-xl font-semibold">{currentWord.translation}</p>
-                    <div className="pt-4 border-t">
-                      <p className="text-sm text-muted-foreground mb-2">Example:</p>
-                      <p className="italic">{currentWord.exampleSentence}</p>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleSpeak(currentWord.exampleSentence);
-                        }}
-                        className="mt-2"
-                      >
-                        <Volume2 className="w-6 h-6" />
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-              </motion.div>
-
-              {/* Action buttons */}
-              {isFlipped && (
-                <div className="flex gap-4 mt-6 justify-center">
-                  <Button
-                    variant="destructive"
-                    onClick={() => handleSwipe(false)}
-                    className="flex-1 max-w-[150px]"
-                  >
-                    Wrong
-                  </Button>
-                  <Button
-                    onClick={() => handleSwipe(true)}
-                    className="flex-1 max-w-[150px]"
-                  >
-                    Correct
-                  </Button>
-                </div>
-              )}
-            </motion.div>
+      <div className="flex-1 flex items-center justify-center pointer-events-none">
+        <div className="pointer-events-auto">
+          {sessionWords.length > 0 && (
+            <VocabularyCardPile
+              key={`vocabulary-pile-${currentIndex}`}
+              words={sessionWords}
+              currentIndex={currentIndex}
+              cardState={cardState}
+              onFlip={handleFlip}
+              onSwipe={handleSwipe}
+            />
           )}
-        </AnimatePresence>
+        </div>
       </div>
     </div>
   );

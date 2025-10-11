@@ -326,19 +326,17 @@ const Index = () => {
 
       <div className="flex-1 flex items-center justify-center pointer-events-none" style={{ touchAction: 'pan-x' }}>
         <div className="pointer-events-auto">
-          <AnimatePresence mode="popLayout">
-            {currentVerb && (
-              <CardPile
-                key={`pile-${currentIndex}`}
-                verbs={currentSessionVerbs}
-                currentIndex={currentIndex}
-                cardState={cardState}
-                onFlip={handleFlip}
-                onSwipe={handleSwipe}
-                showTranslation={showTranslation}
-              />
-            )}
-          </AnimatePresence>
+          {currentVerb && (
+            <CardPile
+              key={`pile-${currentIndex}`}
+              verbs={currentSessionVerbs}
+              currentIndex={currentIndex}
+              cardState={cardState}
+              onFlip={handleFlip}
+              onSwipe={handleSwipe}
+              showTranslation={showTranslation}
+            />
+          )}
         </div>
       </div>
 
