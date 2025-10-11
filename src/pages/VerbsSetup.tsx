@@ -25,9 +25,9 @@ const VerbsSetup = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background pb-20 pt-6 px-4">
-      <div className="max-w-2xl mx-auto space-y-6">
-        <div className="flex items-center gap-4">
+    <div className="min-h-screen bg-background pb-20 pt-4 px-4">
+      <div className="max-w-2xl mx-auto space-y-4">
+        <div className="flex items-center gap-3">
           <Button
             variant="ghost"
             size="icon"
@@ -35,84 +35,74 @@ const VerbsSetup = () => {
           >
             <ArrowLeft className="w-5 h-5" />
           </Button>
-          <div className="space-y-1">
-            <h1 className="text-3xl font-bold">Onregelmatige werkwoorden</h1>
-            <p className="text-muted-foreground">Configure your practice session</p>
+          <div className="space-y-0">
+            <h1 className="text-2xl font-bold">Onregelmatige werkwoorden</h1>
+            <p className="text-sm text-muted-foreground">Configure your practice</p>
           </div>
         </div>
 
         <Card>
-          <CardHeader>
-            <CardTitle>Game Mode</CardTitle>
-            <CardDescription>Choose how many verbs to practice</CardDescription>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base">Game Mode</CardTitle>
           </CardHeader>
-          <CardContent className="grid gap-3">
+          <CardContent className="grid grid-cols-2 gap-2">
             <Button
               variant={mode === "short" ? "default" : "outline"}
-              className="h-auto py-4 justify-start"
+              className="h-auto py-3 flex-col gap-1"
               onClick={() => setMode("short")}
             >
-              <div className="flex items-center gap-3">
-                <Zap className="w-5 h-5" />
-                <div className="text-left">
-                  <div className="font-semibold">Quick Mode</div>
-                  <div className="text-sm opacity-80">Practice 10 verbs</div>
-                </div>
-              </div>
+              <Zap className="w-4 h-4" />
+              <div className="text-sm font-semibold">Quick</div>
+              <div className="text-xs opacity-80">10 verbs</div>
             </Button>
             <Button
               variant={mode === "long" ? "default" : "outline"}
-              className="h-auto py-4 justify-start"
+              className="h-auto py-3 flex-col gap-1"
               onClick={() => setMode("long")}
             >
-              <div className="flex items-center gap-3">
-                <List className="w-5 h-5" />
-                <div className="text-left">
-                  <div className="font-semibold">Full Mode</div>
-                  <div className="text-sm opacity-80">Practice all verbs</div>
-                </div>
-              </div>
+              <List className="w-4 h-4" />
+              <div className="text-sm font-semibold">Full</div>
+              <div className="text-xs opacity-80">All verbs</div>
             </Button>
           </CardContent>
         </Card>
 
         <Card>
-          <CardHeader>
-            <CardTitle>Verb Category</CardTitle>
-            <CardDescription>Select which verbs to practice</CardDescription>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base">Verb Category</CardTitle>
           </CardHeader>
-          <CardContent className="grid gap-3">
+          <CardContent className="grid grid-cols-2 gap-2">
             <Button
               variant={category === "all" ? "default" : "outline"}
-              className="h-auto py-4 justify-between"
+              className="h-auto py-2.5 justify-between text-sm"
               onClick={() => setCategory("all")}
             >
-              <span className="font-semibold">All Verbs</span>
-              <span className="text-sm opacity-80">{getVerbCount("all")} verbs</span>
+              <span className="font-semibold">All</span>
+              <span className="text-xs opacity-80">{getVerbCount("all")}</span>
             </Button>
             <Button
               variant={category === "hebben" ? "default" : "outline"}
-              className="h-auto py-4 justify-between"
+              className="h-auto py-2.5 justify-between text-sm"
               onClick={() => setCategory("hebben")}
             >
               <span className="font-semibold">hebben</span>
-              <span className="text-sm opacity-80">{getVerbCount("hebben")} verbs</span>
+              <span className="text-xs opacity-80">{getVerbCount("hebben")}</span>
             </Button>
             <Button
               variant={category === "zijn" ? "default" : "outline"}
-              className="h-auto py-4 justify-between"
+              className="h-auto py-2.5 justify-between text-sm"
               onClick={() => setCategory("zijn")}
             >
               <span className="font-semibold">zijn</span>
-              <span className="text-sm opacity-80">{getVerbCount("zijn")} verbs</span>
+              <span className="text-xs opacity-80">{getVerbCount("zijn")}</span>
             </Button>
             <Button
               variant={category === "hebben/zijn" ? "default" : "outline"}
-              className="h-auto py-4 justify-between"
+              className="h-auto py-2.5 justify-between text-sm"
               onClick={() => setCategory("hebben/zijn")}
             >
               <span className="font-semibold">hebben/zijn</span>
-              <span className="text-sm opacity-80">{getVerbCount("hebben/zijn")} verbs</span>
+              <span className="text-xs opacity-80">{getVerbCount("hebben/zijn")}</span>
             </Button>
           </CardContent>
         </Card>
