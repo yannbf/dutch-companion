@@ -228,14 +228,14 @@ const Index = () => {
             {currentIndex + 1} / {currentSessionVerbs.length}
           </div>
           
-          <div className={`text-lg font-bold min-w-[60px] text-right transition-colors duration-200 ${
+          <div className={`text-sm font-medium min-w-[60px] text-right transition-colors duration-200 ${
             lastResult === "correct" 
               ? "text-green-500" 
               : lastResult === "incorrect" 
               ? "text-red-500" 
               : ""
           }`}>
-            {points}
+            Score: {points}
           </div>
         </div>
       </div>

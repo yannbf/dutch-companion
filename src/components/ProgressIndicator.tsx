@@ -19,11 +19,11 @@ export const ProgressIndicator = ({ totalCards, results }: ProgressIndicatorProp
   };
 
   return (
-    <div className="fixed top-0 left-0 flex flex-row justify-evenly w-full z-50">
+    <div className="fixed top-1 left-0 flex flex-row justify-evenly w-full z-50 px-1">
       {Array.from({ length: totalCards }, (_, index) => (
         <div
           key={index}
-          className={`flex-1 h-2.5 rounded-full w-auto mx-0.5 block min-w-0 transition-colors duration-200 ${
+          className={`flex-1 h-2 rounded-full w-auto mx-0.5 block min-w-0 transition-colors duration-200 ${
             getClassName(index) === 'correct' 
               ? 'bg-green-500' 
               : getClassName(index) === 'wrong' 
