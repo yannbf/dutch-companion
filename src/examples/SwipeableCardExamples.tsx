@@ -14,6 +14,9 @@ interface VocabularyCardContent extends CardContent {
 const createVocabularyCardContent = (word: string, translation: string, example: string): VocabularyCardContent => ({
   id: word,
   type: 'vocabulary',
+  word,
+  translation,
+  example,
   states: [
     {
       id: "front",
@@ -51,6 +54,10 @@ interface QuizCardContent extends CardContent {
 const createQuizCardContent = (question: string, options: string[], correctAnswer: string, explanation: string): QuizCardContent => ({
   id: question,
   type: 'quiz',
+  question,
+  options,
+  correctAnswer,
+  explanation,
   states: [
     {
       id: "question",
@@ -96,6 +103,9 @@ interface ImageCardContent extends CardContent {
 const createImageCardContent = (imageUrl: string, title: string, description: string): ImageCardContent => ({
   id: title,
   type: 'image',
+  imageUrl,
+  title,
+  description,
   states: [
     {
       id: "image",
@@ -265,7 +275,7 @@ export const SwipeableCardExamples = () => {
         {/* Swipeable Card Component */}
         <div className="flex justify-center">
           <SwipeableCardPile
-            cards={getCurrentCards()}
+            cards={getCurrentCards() as CardContent[]}
             currentIndex={currentIndex}
             currentState={currentState}
             onFlip={handleFlip}

@@ -1,13 +1,11 @@
 import { useState, useMemo, useEffect, useRef } from "react";
-import { AnimatePresence } from "framer-motion";
+import { useNavigate } from "react-router-dom";
 import { verbData, VerbCard } from "@/data/verbs";
 import { CardPile } from "@/components/CardPile";
-import { PointTracker } from "@/components/PointTracker";
-import { GameControls } from "@/components/GameControls";
 import { SummaryScreen } from "@/components/SummaryScreen";
 import { ProgressIndicator } from "@/components/ProgressIndicator";
 import { Button } from "@/components/ui/button";
-import { RotateCcw } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import { speakerService } from "@/services/speaker";
 
 interface VerbResult {
@@ -15,18 +13,16 @@ interface VerbResult {
   correct: boolean;
 }
 
-// Load settings from localStorage
-const loadSettings = () => {
+// Load global settings from localStorage
+const loadGlobalSettings = () => {
   const defaultSettings = {
     showTranslation: true,
-    category: "all" as "all" | "hebben" | "zijn" | "hebben/zijn",
-    mode: "short" as "short" | "long",
     randomMode: false,
     voiceMode: true,
   };
 
   try {
-    const saved = localStorage.getItem('taal-boost-settings');
+    const saved = localStorage.getItem('taal-boost-global-settings');
     if (saved) {
       return { ...defaultSettings, ...JSON.parse(saved) };
     }
@@ -37,34 +33,41 @@ const loadSettings = () => {
   return defaultSettings;
 };
 
-// Save settings to localStorage
-const saveSettings = (settings: {
-  showTranslation: boolean;
-  category: "all" | "hebben" | "zijn" | "hebben/zijn";
-  mode: "short" | "long";
-  randomMode: boolean;
-  voiceMode: boolean;
-}) => {
+// Load game setup from localStorage
+const loadGameSetup = () => {
+  const defaultSetup = {
+    category: "all" as "all" | "hebben" | "zijn" | "hebben/zijn",
+    mode: "short" as "short" | "long",
+  };
+
   try {
-    localStorage.setItem('taal-boost-settings', JSON.stringify(settings));
+    const saved = localStorage.getItem('verbs-game-setup');
+    if (saved) {
+      return { ...defaultSetup, ...JSON.parse(saved) };
+    }
   } catch (error) {
-    console.warn('Failed to save settings to localStorage:', error);
+    console.warn('Failed to load game setup from localStorage:', error);
   }
+  
+  return defaultSetup;
 };
 
 const Index = () => {
+  const navigate = useNavigate();
+  const globalSettings = loadGlobalSettings();
+  const gameSetup = loadGameSetup();
+  
   const [currentIndex, setCurrentIndex] = useState(0);
   const [cardState, setCardState] = useState<0 | 1 | 2>(0);
   const [points, setPoints] = useState(0);
-  const [showTranslation, setShowTranslation] = useState(loadSettings().showTranslation);
-  const [category, setCategory] = useState<"all" | "hebben" | "zijn" | "hebben/zijn">(loadSettings().category);
-  const [mode, setMode] = useState<"short" | "long">(loadSettings().mode);
-  const [randomMode, setRandomMode] = useState(loadSettings().randomMode);
-  const [voiceMode, setVoiceMode] = useState(loadSettings().voiceMode);
+  const [showTranslation] = useState(globalSettings.showTranslation);
+  const [category] = useState(gameSetup.category);
+  const [mode] = useState(gameSetup.mode);
+  const [randomMode] = useState(globalSettings.randomMode);
+  const [voiceMode] = useState(globalSettings.voiceMode);
   const [showSummary, setShowSummary] = useState(false);
   const [results, setResults] = useState<VerbResult[]>([]);
   const [sessionVerbs, setSessionVerbs] = useState<VerbCard[]>([]);
-  const [spokenWords, setSpokenWords] = useState<Set<string>>(new Set());
   const [lastResult, setLastResult] = useState<"correct" | "incorrect" | null>(null);
   const lastSpeechTime = useRef<number>(0);
   const speechTimeout = useRef<NodeJS.Timeout | null>(null);
@@ -173,20 +176,7 @@ const Index = () => {
   };
 
   const handleRestart = () => {
-    setCurrentIndex(0);
-    setCardState(0);
-    setPoints(0);
-    setShowSummary(false);
-    setResults([]);
-    setSessionVerbs([]);
-    setSpokenWords(new Set());
-    setLastResult(null);
-    // Cancel any pending speech
-    if (speechTimeout.current) {
-      clearTimeout(speechTimeout.current);
-      speechTimeout.current = null;
-    }
-    lastSpeechTime.current = 0;
+    navigate('/exercises/verbs');
   };
 
   const handleRetry = () => {
@@ -194,7 +184,6 @@ const Index = () => {
     setCardState(0);
     setPoints(0);
     setResults([]);
-    setSpokenWords(new Set());
     setLastResult(null);
     // Cancel any pending speech
     if (speechTimeout.current) {
@@ -206,84 +195,6 @@ const Index = () => {
     if (randomMode) {
       setSessionVerbs([]);
     }
-  };
-
-  const handleCategoryChange = (newCategory: "all" | "hebben" | "zijn" | "hebben/zijn") => {
-    setCategory(newCategory);
-    setCurrentIndex(0);
-    setCardState(0);
-    setPoints(0);
-    setResults([]);
-    setSessionVerbs([]);
-    setSpokenWords(new Set());
-    // Save settings
-    saveSettings({
-      showTranslation,
-      category: newCategory,
-      mode,
-      randomMode,
-      voiceMode,
-    });
-  };
-
-  const handleModeChange = (newMode: "short" | "long") => {
-    setMode(newMode);
-    setCurrentIndex(0);
-    setCardState(0);
-    setPoints(0);
-    setResults([]);
-    setSessionVerbs([]);
-    setSpokenWords(new Set());
-    // Save settings
-    saveSettings({
-      showTranslation,
-      category,
-      mode: newMode,
-      randomMode,
-      voiceMode,
-    });
-  };
-
-  const handleRandomModeToggle = (random: boolean) => {
-    setRandomMode(random);
-    setCurrentIndex(0);
-    setCardState(0);
-    setPoints(0);
-    setResults([]);
-    setSessionVerbs([]);
-    setSpokenWords(new Set());
-    // Save settings
-    saveSettings({
-      showTranslation,
-      category,
-      mode,
-      randomMode: random,
-      voiceMode,
-    });
-  };
-
-  const handleVoiceModeToggle = (voice: boolean) => {
-    setVoiceMode(voice);
-    // Save settings
-    saveSettings({
-      showTranslation,
-      category,
-      mode,
-      randomMode,
-      voiceMode: voice,
-    });
-  };
-
-  const handleTranslationToggle = (show: boolean) => {
-    setShowTranslation(show);
-    // Save settings
-    saveSettings({
-      showTranslation: show,
-      category,
-      mode,
-      randomMode,
-      voiceMode,
-    });
   };
 
   if (showSummary) {
@@ -299,32 +210,37 @@ const Index = () => {
   }
 
   return (
-    <div className="h-screen relative overflow-hidden flex flex-col" style={{ touchAction: 'pan-x' }}>
+    <div className="h-screen relative overflow-hidden flex flex-col pb-20" style={{ touchAction: 'pan-x' }}>
       <ProgressIndicator totalCards={currentSessionVerbs.length} results={results} />
-      <GameControls
-        currentCategory={category}
-        onCategoryChange={handleCategoryChange}
-        currentMode={mode}
-        onModeChange={handleModeChange}
-        showTranslation={showTranslation}
-        onTranslationToggle={handleTranslationToggle}
-        randomMode={randomMode}
-        onRandomModeToggle={handleRandomModeToggle}
-        voiceMode={voiceMode}
-        onVoiceModeToggle={handleVoiceModeToggle}
-      />
-      <PointTracker points={points} lastResult={lastResult} />
       
-      <Button
-        variant="outline"
-        size="icon"
-        onClick={handleRetry}
-        className="fixed bottom-6 left-6 bg-card border-2 border-primary font-bold"
-      >
-        <RotateCcw className="w-5 h-5" />
-      </Button>
+      {/* Header */}
+      <div className="fixed top-0 left-0 right-0 z-40 bg-background/80 backdrop-blur-sm border-b border-border">
+        <div className="flex items-center justify-between px-4 h-14">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => navigate('/exercises/verbs')}
+          >
+            <ArrowLeft className="w-5 h-5" />
+          </Button>
+          
+          <div className="text-sm font-medium text-muted-foreground">
+            {currentIndex + 1} / {currentSessionVerbs.length}
+          </div>
+          
+          <div className={`text-lg font-bold min-w-[60px] text-right transition-colors duration-200 ${
+            lastResult === "correct" 
+              ? "text-green-500" 
+              : lastResult === "incorrect" 
+              ? "text-red-500" 
+              : ""
+          }`}>
+            {points}
+          </div>
+        </div>
+      </div>
 
-      <div className="flex-1 flex items-center justify-center pointer-events-none" style={{ touchAction: 'pan-x' }}>
+      <div className="flex-1 flex items-center justify-center pointer-events-none pt-14" style={{ touchAction: 'pan-x' }}>
         <div className="pointer-events-auto">
           {currentVerb && (
             <CardPile
@@ -338,10 +254,6 @@ const Index = () => {
             />
           )}
         </div>
-      </div>
-
-      <div className="fixed bottom-6 right-6 text-sm text-muted-foreground pointer-events-none">
-        {currentIndex + 1} / {currentSessionVerbs.length}
       </div>
     </div>
   );
