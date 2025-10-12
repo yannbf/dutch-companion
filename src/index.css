@@ -95,4 +95,11 @@ All colors MUST be HSL.
   body {
     @apply bg-background text-foreground;
   }
+
+  /* Remove hover states on touch devices to prevent persistent backgrounds */
+  @media (hover: none) {
+    .md\:hover\:bg-accent:hover {
+      background-color: inherit;
+    }
+  }
 }

@@ -36,12 +36,12 @@ const Exercises = () => {
             return (
               <Card
                 key={exercise.id}
-                className="cursor-pointer hover:bg-accent transition-colors"
+                className="cursor-pointer active:bg-accent/80 md:hover:bg-accent transition-colors"
                 onClick={() => navigate(exercise.path)}
               >
                 <CardHeader className="flex flex-row items-center gap-4">
-                  <div className="p-3 bg-primary/10 rounded-lg">
-                    <Icon className="w-6 h-6 text-primary" />
+                  <div className="p-3 bg-card rounded-lg border border-primary/20">
+                    <Icon className="w-6 h-6 text-foreground" />
                   </div>
                   <div className="flex-1">
                     <CardTitle>{exercise.title}</CardTitle>

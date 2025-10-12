@@ -48,7 +48,7 @@ const VerbsSetup = () => {
           <CardContent className="grid grid-cols-2 gap-2">
             <Button
               variant={mode === "short" ? "default" : "outline"}
-              className="h-auto py-3 flex-col gap-1"
+              className="h-auto py-3 flex-col gap-1 touch-manipulation"
               onClick={() => setMode("short")}
             >
               <Zap className="w-4 h-4" />
@@ -57,7 +57,7 @@ const VerbsSetup = () => {
             </Button>
             <Button
               variant={mode === "long" ? "default" : "outline"}
-              className="h-auto py-3 flex-col gap-1"
+              className="h-auto py-3 flex-col gap-1 touch-manipulation"
               onClick={() => setMode("long")}
             >
               <List className="w-4 h-4" />
@@ -74,7 +74,7 @@ const VerbsSetup = () => {
           <CardContent className="grid grid-cols-2 gap-2">
             <Button
               variant={category === "all" ? "default" : "outline"}
-              className="h-auto py-2.5 justify-between text-sm"
+              className="h-auto py-2.5 justify-between text-sm touch-manipulation"
               onClick={() => setCategory("all")}
             >
               <span className="font-semibold">All</span>
@@ -82,7 +82,7 @@ const VerbsSetup = () => {
             </Button>
             <Button
               variant={category === "hebben" ? "default" : "outline"}
-              className="h-auto py-2.5 justify-between text-sm"
+              className="h-auto py-2.5 justify-between text-sm touch-manipulation"
               onClick={() => setCategory("hebben")}
             >
               <span className="font-semibold">hebben</span>
@@ -90,7 +90,7 @@ const VerbsSetup = () => {
             </Button>
             <Button
               variant={category === "zijn" ? "default" : "outline"}
-              className="h-auto py-2.5 justify-between text-sm"
+              className="h-auto py-2.5 justify-between text-sm touch-manipulation"
               onClick={() => setCategory("zijn")}
             >
               <span className="font-semibold">zijn</span>
@@ -98,7 +98,7 @@ const VerbsSetup = () => {
             </Button>
             <Button
               variant={category === "hebben/zijn" ? "default" : "outline"}
-              className="h-auto py-2.5 justify-between text-sm"
+              className="h-auto py-2.5 justify-between text-sm touch-manipulation"
               onClick={() => setCategory("hebben/zijn")}
             >
               <span className="font-semibold">hebben/zijn</span>
