@@ -3,9 +3,10 @@ import { vocabularyData, VocabularyWord } from "@/data/vocabulary";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Volume2, Search, Heart } from "lucide-react";
+import { Volume2, Search, Heart, Filter } from "lucide-react";
 import { speakerService } from "@/services/speaker";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 
 // Extended word interface for favorites with chapter info
 interface VocabularyWordWithChapter extends VocabularyWord {
@@ -43,36 +44,114 @@ const useFavorites = () => {
 };
 
 const Vocabulary = () => {
-  const [selectedChapter, setSelectedChapter] = useState(vocabularyData[0].id);
   const [searchTerm, setSearchTerm] = useState("");
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [selectedChapter, setSelectedChapter] = useState<string>("all");
+  const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const { toggleFavorite, isFavorite, getFavoriteWords } = useFavorites();
 
-  // Handle special "favorites" chapter
+  // Get all unique categories from vocabulary data
+  const allCategories = useMemo(() => {
+    const categories = new Set<string>();
+    vocabularyData.forEach(chapter => {
+      chapter.words.forEach(word => {
+        categories.add(word.category);
+      });
+    });
+    return Array.from(categories).sort();
+  }, []);
+
+  // Handle special views
   const isFavoritesView = selectedChapter === "favorites";
-  const currentChapter = isFavoritesView ? null : (vocabularyData.find(ch => ch.id === selectedChapter) || vocabularyData[0]);
+  const isAllChaptersView = selectedChapter === "all";
+  const currentChapter = isFavoritesView || isAllChaptersView ? null : (vocabularyData.find(ch => ch.id === selectedChapter) || vocabularyData[0]);
 
-  // Get words to display
+  // Get words to display based on current view, category filter, and search
   const wordsToDisplay = useMemo(() => {
+    let words;
     if (isFavoritesView) {
-      return getFavoriteWords();
+      words = getFavoriteWords();
+    } else if (isAllChaptersView) {
+      // All chapters - get all words from all chapters
+      words = vocabularyData.flatMap(chapter => chapter.words);
+    } else {
+      words = currentChapter?.words || [];
     }
-    return currentChapter?.words || [];
-  }, [isFavoritesView, currentChapter, getFavoriteWords]);
 
-  // Filter words based on search term
+    // Apply category filter if not "all"
+    if (selectedCategory !== "all") {
+      words = words.filter(word => word.category === selectedCategory);
+    }
+
+    return words;
+  }, [isFavoritesView, isAllChaptersView, currentChapter, getFavoriteWords, selectedCategory]);
+
+  // Get all words with chapter information for search
+  const allWordsWithChapters = useMemo(() => {
+    let words;
+    if (isFavoritesView) {
+      words = getFavoriteWords();
+    } else if (isAllChaptersView) {
+      // All chapters - get all words from all chapters
+      words = vocabularyData.flatMap(chapter =>
+        chapter.words.map(word => ({
+          ...word,
+          chapterId: chapter.id,
+          chapterTitle: chapter.title
+        }))
+      );
+    } else {
+      // Specific chapter
+      const chapter = vocabularyData.find(ch => ch.id === selectedChapter);
+      words = chapter ? chapter.words.map(word => ({
+        ...word,
+        chapterId: chapter.id,
+        chapterTitle: chapter.title
+      })) : [];
+    }
+
+    // Apply category filter if not "all"
+    if (selectedCategory !== "all") {
+      words = words.filter(word => word.category === selectedCategory);
+    }
+
+    return words;
+  }, [isFavoritesView, isAllChaptersView, selectedChapter, getFavoriteWords, selectedCategory]);
+
+  // Get count for each option with category filtering
+  const getOptionCount = useCallback((chapterId: string, category: string) => {
+    let words;
+    if (chapterId === "favorites") {
+      words = getFavoriteWords();
+    } else if (chapterId === "all") {
+      words = vocabularyData.flatMap(chapter => chapter.words);
+    } else {
+      const chapter = vocabularyData.find(ch => ch.id === chapterId);
+      words = chapter?.words || [];
+    }
+
+    if (category !== "all") {
+      words = words.filter(word => word.category === category);
+    }
+
+    return words.length;
+  }, [getFavoriteWords]);
+
+  // Filter words based on search term across all chapters when searching
   const filteredWords = useMemo(() => {
     if (!searchTerm.trim()) {
+      // If no search term, show current chapter or favorites
       return wordsToDisplay;
     }
 
     const searchLower = searchTerm.toLowerCase();
-    return wordsToDisplay.filter(word =>
+    return allWordsWithChapters.filter(word =>
       word.word.toLowerCase().includes(searchLower) ||
       word.translation.toLowerCase().includes(searchLower) ||
       word.exampleSentence.toLowerCase().includes(searchLower) ||
       (word.article && word.article.toLowerCase().includes(searchLower))
     );
-  }, [wordsToDisplay, searchTerm]);
+  }, [wordsToDisplay, allWordsWithChapters, searchTerm]);
 
   // Use filtered words as-is (no sorting)
   const displayWords = filteredWords;
@@ -85,34 +164,104 @@ const Vocabulary = () => {
     <div className="min-h-screen pb-20 px-4 pt-6">
       <div className="max-w-2xl mx-auto">
         <h1 className="text-3xl font-bold mb-6 text-center">Vocabulary</h1>
-        
-        <Select value={selectedChapter} onValueChange={setSelectedChapter}>
-          <SelectTrigger className="mb-6">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {/* Favorites option */}
-            <SelectItem value="favorites">
-              Favorites ({getFavoriteWords().length} words)
-            </SelectItem>
-            {/* Regular chapters */}
-            {vocabularyData.map(chapter => (
-              <SelectItem key={chapter.id} value={chapter.id}>
-                {chapter.title} ({chapter.words.length} words)
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
 
+        {/* Search bar with filter button */}
         <div className="mb-6">
-          <div className="relative">
+          <div className="relative flex items-center">
             <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
             <Input
               placeholder="Search vocabulary..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10"
+              className="pl-10 pr-12"
             />
+            <Dialog open={isFilterOpen} onOpenChange={setIsFilterOpen}>
+              <DialogTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="absolute right-1 top-1 h-8 w-8"
+                >
+                  <Filter className="h-4 w-4" />
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-md">
+                <DialogHeader>
+                  <DialogTitle>Filter Options</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4">
+                  <div>
+                    <label className="text-sm font-medium mb-2 block">Select Chapter</label>
+                    <Select value={selectedChapter} onValueChange={setSelectedChapter}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {/* All chapters option */}
+                        <SelectItem value="all">
+                          All chapters ({getOptionCount("all", selectedCategory)} words)
+                        </SelectItem>
+                        {/* Favorites option */}
+                        <SelectItem value="favorites">
+                          Favorites ({getOptionCount("favorites", selectedCategory)} words)
+                        </SelectItem>
+                        {/* Regular chapters */}
+                        {vocabularyData.map(chapter => (
+                          <SelectItem key={chapter.id} value={chapter.id}>
+                            {chapter.title} ({getOptionCount(chapter.id, selectedCategory)} words)
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div>
+                    <label className="text-sm font-medium mb-2 block">Select Category</label>
+                    <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">
+                          All Categories ({getOptionCount(selectedChapter, "all")} words)
+                        </SelectItem>
+                        {allCategories.map(category => {
+                          const displayName = category === 'scheidbare-werkwoorden' ? 'Separable Verbs' :
+                                             category === 'werkwoorden' ? 'Verbs' :
+                                             category.charAt(0).toUpperCase() + category.slice(1);
+                          return (
+                            <SelectItem key={category} value={category}>
+                              {displayName} ({getOptionCount(selectedChapter, category)} words)
+                            </SelectItem>
+                          );
+                        })}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        setSelectedChapter("all");
+                        setSelectedCategory("all");
+                      }}
+                      className="flex-1"
+                    >
+                      Reset Filters
+                    </Button>
+                  </div>
+
+                  <div className="text-sm text-muted-foreground">
+                    <p><strong>Filter behavior:</strong></p>
+                    <p>• Chapter: "All chapters" shows everything, specific chapters filter the view</p>
+                    <p>• Category: Filters words by type (counts update based on chapter selection)</p>
+                    <p>• Search: Works across all chapters and respects both filters</p>
+                  </div>
+                </div>
+              </DialogContent>
+            </Dialog>
           </div>
         </div>
 
@@ -120,18 +269,22 @@ const Vocabulary = () => {
           {displayWords.length > 0 ? (
             displayWords.map((word, idx) => {
               const favorite = isFavorite(word.word);
+              // Show chapter info for search results (when searching across chapters) or favorites view
+              const showChapterInfo = (searchTerm.trim() && 'chapterTitle' in word && word.chapterTitle) || isFavoritesView;
               return (
                 <Card key={idx}>
                   <CardHeader>
-                    <CardTitle className="text-lg flex items-center justify-between">
-                      <span>{word.article ? `${word.word}, ${word.article}` : word.word}</span>
-                      <div className="flex items-center gap-2">
-                        {/* Show chapter info for favorites view */}
-                        {isFavoritesView && 'chapterTitle' in word && word.chapterTitle && (
-                          <span className="text-sm text-muted-foreground mr-2">
-                            {(word as VocabularyWordWithChapter).chapterTitle}
-                          </span>
+                    <CardTitle className="text-lg flex items-start justify-between">
+                      <div className="flex-1">
+                        <span>{word.article ? `${word.word}, ${word.article}` : word.word}</span>
+                        {/* Show chapter info for search results or favorites view */}
+                        {showChapterInfo && 'chapterTitle' in word && word.chapterTitle && (
+                          <div className="text-sm text-muted-foreground mt-1">
+                            From: {(word as VocabularyWordWithChapter).chapterTitle}
+                          </div>
                         )}
+                      </div>
+                      <div className="flex items-center gap-2 ml-4">
                         <Button
                           size="icon"
                           variant="ghost"
@@ -174,7 +327,11 @@ const Vocabulary = () => {
                     ? `No vocabulary words found matching "${searchTerm}"`
                     : isFavoritesView
                       ? "No favorite words yet. Add some favorites to see them here!"
-                      : "No vocabulary words found"
+                      : selectedCategory !== "all"
+                        ? `No ${selectedCategory} words found${isAllChaptersView ? " in any chapter" : " in this chapter"}`
+                        : isAllChaptersView
+                          ? "No vocabulary words found across all chapters"
+                          : "No vocabulary words found"
                   }
                 </p>
               </CardContent>
