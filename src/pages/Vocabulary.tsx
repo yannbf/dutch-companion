@@ -14,6 +14,18 @@ interface VocabularyWordWithChapter extends VocabularyWord {
   chapterTitle: string;
 }
 
+// Category abbreviations
+const getCategoryAbbr = (category: VocabularyWord['category']) => {
+  switch (category) {
+    case 'idioom': return 'idiom';
+    case 'vocabulaire': return 'vocab';
+    case 'preposities': return 'prep.';
+    case 'werkwoorden': return 'verb';
+    case 'scheidbare-werkwoorden': return 'sep. verb';
+    default: return '';
+  }
+};
+
 // Custom hook for managing favorites
 const useFavorites = () => {
   const [favorites, setFavorites] = useState<Set<string>>(() => {
@@ -227,8 +239,8 @@ const Vocabulary = () => {
                         </SelectItem>
                         {allCategories.map(category => {
                           const displayName = category === 'scheidbare-werkwoorden' ? 'Separable Verbs' :
-                                             category === 'werkwoorden' ? 'Verbs' :
-                                             category.charAt(0).toUpperCase() + category.slice(1);
+                            category === 'werkwoorden' ? 'Verbs' :
+                              category.charAt(0).toUpperCase() + category.slice(1);
                           return (
                             <SelectItem key={category} value={category}>
                               {displayName} ({getOptionCount(selectedChapter, category)} words)
@@ -252,13 +264,6 @@ const Vocabulary = () => {
                       Reset Filters
                     </Button>
                   </div>
-
-                  <div className="text-sm text-muted-foreground">
-                    <p><strong>Filter behavior:</strong></p>
-                    <p>• Chapter: "All chapters" shows everything, specific chapters filter the view</p>
-                    <p>• Category: Filters words by type (counts update based on chapter selection)</p>
-                    <p>• Search: Works across all chapters and respects both filters</p>
-                  </div>
                 </div>
               </DialogContent>
             </Dialog>
@@ -275,7 +280,10 @@ const Vocabulary = () => {
                 <Card key={idx}>
                   <CardHeader>
                     <CardTitle className="text-lg flex items-start justify-between">
-                      <div className="flex-1">
+                      <div className="flex-1 relative">
+                        <div className="absolute top-0 right-0 text-[10px] text-muted-foreground/40 uppercase tracking-wider">
+                          {getCategoryAbbr(word.category)}
+                        </div>
                         <span>{word.article ? `${word.word}, ${word.article}` : word.word}</span>
                         {/* Show chapter info for search results or favorites view */}
                         {showChapterInfo && 'chapterTitle' in word && word.chapterTitle && (

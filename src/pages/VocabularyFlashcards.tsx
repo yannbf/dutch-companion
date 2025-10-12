@@ -1,5 +1,4 @@
 import { useState, useMemo, useEffect, useRef, useCallback } from "react";
-import { AnimatePresence } from "framer-motion";
 import { vocabularyData, VocabularyWord } from "@/data/vocabulary";
 import { SwipeableCardPile, CardContent, CardState } from "@/components/SwipeableCardPile";
 import { Button } from "@/components/ui/button";
@@ -10,18 +9,6 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { ReactNode } from "react";
 
-// Category abbreviations
-const getCategoryAbbr = (category: VocabularyWord['category']) => {
-  switch (category) {
-    case 'idioom': return 'idi.';
-    case 'vocabulaire': return 'voc.';
-    case 'preposities': return 'prep.';
-    case 'werkwoorden': return 'ww.';
-    case 'scheidbare-werkwoorden': return 'sw.';
-    default: return '';
-  }
-};
-
 // Convert VocabularyWord to generic CardContent format
 const createVocabularyCardContent = (word: VocabularyWord): CardContent => ({
   id: word.word,
@@ -29,10 +16,7 @@ const createVocabularyCardContent = (word: VocabularyWord): CardContent => ({
     {
       id: "front",
       content: (
-        <div className="text-center space-y-6 relative">
-          <div className="absolute top-0 right-0 text-[10px] text-muted-foreground/40 uppercase tracking-wider">
-            {getCategoryAbbr(word.category)}
-          </div>
+        <div className="text-center space-y-6">
           <div className="space-y-2">
             {word.article && (
               <p className="text-2xl text-muted-foreground font-medium">{word.article}</p>
