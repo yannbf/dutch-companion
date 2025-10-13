@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import { GraduationCap, BookOpen } from "lucide-react";
+import { GraduationCap, BookOpen, FileText } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 
 const Exercises = () => {
@@ -19,6 +19,13 @@ const Exercises = () => {
       description: "Learn vocabulary with flashcards from different chapters",
       icon: BookOpen,
       path: "/exercises/vocabulary",
+    },
+    {
+      id: "deofhet",
+      title: "De of Het",
+      description: "Practice Dutch articles by swiping left or right",
+      icon: FileText,
+      path: "/exercises/deofhet",
     },
   ];
 
