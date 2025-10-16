@@ -102,4 +102,35 @@ All colors MUST be HSL.
       background-color: inherit;
     }
   }
+
+  /* Safe area utilities for iOS devices */
+  .safe-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  .safe-top {
+    padding-top: env(safe-area-inset-top);
+  }
+
+  .safe-left {
+    padding-left: env(safe-area-inset-left);
+  }
+
+  .safe-right {
+    padding-right: env(safe-area-inset-right);
+  }
+
+  .safe-all {
+    padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+  }
+
+  /* Fix for iOS dynamic viewport height */
+  .ios-viewport-fix {
+    min-height: -webkit-fill-available;
+  }
+
+  /* Ensure body fills the available height on iOS */
+  html, body {
+    height: 100%;
+  }
 }
