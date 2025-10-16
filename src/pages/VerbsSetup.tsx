@@ -1,16 +1,55 @@
-import { useState, useMemo } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Zap, List, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { verbData } from "@/data/verbs";
 
+type VerbCategory = "all" | "hebben" | "zijn" | "hebben/zijn";
+type VerbMode = "short" | "long";
+
+const LS_KEY = 'verbs-game-setup';
+
+const loadSetup = (): { category: VerbCategory; mode: VerbMode } => {
+  const defaultSetup = { category: "all" as VerbCategory, mode: "short" as VerbMode };
+  try {
+    const saved = localStorage.getItem(LS_KEY);
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      const category: VerbCategory = ["all", "hebben", "zijn", "hebben/zijn"].includes(parsed?.category)
+        ? parsed.category
+        : defaultSetup.category;
+      const mode: VerbMode = ["short", "long"].includes(parsed?.mode) ? parsed.mode : defaultSetup.mode;
+      return { category, mode };
+    }
+  } catch {
+    // ignore
+  }
+  return defaultSetup;
+};
+
+const saveSetup = (setup: { category: VerbCategory; mode: VerbMode }) => {
+  try {
+    localStorage.setItem(LS_KEY, JSON.stringify(setup));
+  } catch {
+    // ignore
+  }
+};
+
 const VerbsSetup = () => {
   const navigate = useNavigate();
-  const [category, setCategory] = useState<"all" | "hebben" | "zijn" | "hebben/zijn">("all");
-  const [mode, setMode] = useState<"short" | "long">("short");
+  const [setup, setSetup] = useState(() => loadSetup());
+  const { category, mode } = setup;
 
-  const getVerbCount = (cat: "all" | "hebben" | "zijn" | "hebben/zijn") => {
+  const updateSetup = (partial: Partial<{ category: VerbCategory; mode: VerbMode }>) => {
+    setSetup((prev) => {
+      const next = { ...prev, ...partial };
+      saveSetup(next);
+      return next;
+    });
+  };
+
+  const getVerbCount = (cat: VerbCategory) => {
     if (cat === "all") {
       return mode === "short" ? Math.min(10, verbData.length) : verbData.length;
     }
@@ -19,8 +58,7 @@ const VerbsSetup = () => {
   };
 
   const handleStart = () => {
-    // Save setup choices to localStorage
-    localStorage.setItem('verbs-game-setup', JSON.stringify({ category, mode }));
+    saveSetup({ category, mode });
     navigate('/exercises/verbs/play');
   };
 
@@ -49,7 +87,7 @@ const VerbsSetup = () => {
             <Button
               variant={mode === "short" ? "default" : "outline"}
               className="h-auto py-3 flex-col gap-1 touch-manipulation"
-              onClick={() => setMode("short")}
+              onClick={() => updateSetup({ mode: "short" })}
             >
               <Zap className="w-4 h-4" />
               <div className="text-sm font-semibold">Quick</div>
@@ -58,7 +96,7 @@ const VerbsSetup = () => {
             <Button
               variant={mode === "long" ? "default" : "outline"}
               className="h-auto py-3 flex-col gap-1 touch-manipulation"
-              onClick={() => setMode("long")}
+              onClick={() => updateSetup({ mode: "long" })}
             >
               <List className="w-4 h-4" />
               <div className="text-sm font-semibold">Full</div>
@@ -72,38 +110,22 @@ const VerbsSetup = () => {
             <CardTitle className="text-base">Verb Category</CardTitle>
           </CardHeader>
           <CardContent className="grid grid-cols-2 gap-2">
-            <Button
-              variant={category === "all" ? "default" : "outline"}
-              className="h-auto py-2.5 justify-between text-sm touch-manipulation"
-              onClick={() => setCategory("all")}
-            >
-              <span className="font-semibold">All</span>
-              <span className="text-xs opacity-80">{getVerbCount("all")}</span>
-            </Button>
-            <Button
-              variant={category === "hebben" ? "default" : "outline"}
-              className="h-auto py-2.5 justify-between text-sm touch-manipulation"
-              onClick={() => setCategory("hebben")}
-            >
-              <span className="font-semibold">hebben</span>
-              <span className="text-xs opacity-80">{getVerbCount("hebben")}</span>
-            </Button>
-            <Button
-              variant={category === "zijn" ? "default" : "outline"}
-              className="h-auto py-2.5 justify-between text-sm touch-manipulation"
-              onClick={() => setCategory("zijn")}
-            >
-              <span className="font-semibold">zijn</span>
-              <span className="text-xs opacity-80">{getVerbCount("zijn")}</span>
-            </Button>
-            <Button
-              variant={category === "hebben/zijn" ? "default" : "outline"}
-              className="h-auto py-2.5 justify-between text-sm touch-manipulation"
-              onClick={() => setCategory("hebben/zijn")}
-            >
-              <span className="font-semibold">hebben/zijn</span>
-              <span className="text-xs opacity-80">{getVerbCount("hebben/zijn")}</span>
-            </Button>
+            {([
+              { key: "all", label: "All" },
+              { key: "hebben", label: "hebben" },
+              { key: "zijn", label: "zijn" },
+              { key: "hebben/zijn", label: "hebben/zijn" },
+            ] as Array<{ key: VerbCategory; label: string }>).map(({ key, label }) => (
+              <Button
+                key={key}
+                variant={category === key ? "default" : "outline"}
+                className="h-auto py-2.5 justify-between text-sm touch-manipulation"
+                onClick={() => updateSetup({ category: key })}
+              >
+                <span className="font-semibold">{label}</span>
+                <span className="text-xs opacity-80">{getVerbCount(key)}</span>
+              </Button>
+            ))}
           </CardContent>
         </Card>
 

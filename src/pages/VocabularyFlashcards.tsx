@@ -1,5 +1,6 @@
 import { useState, useMemo, useEffect, useRef, useCallback } from "react";
-import { vocabularyData, VocabularyWord } from "@/data/vocabulary";
+import { vocabularyData } from "@/data/vocabulary";
+import type { VocabularyWord } from "@/data/types";
 import { SwipeableCardPile, CardContent, CardState } from "@/components/SwipeableCardPile";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, RotateCcw } from "lucide-react";
@@ -104,8 +105,18 @@ interface VocabResult {
 
 const VocabularyFlashcards = () => {
   const navigate = useNavigate();
-  const [selectedChapters, setSelectedChapters] = useState<number[]>([]);
-  const [includeFavorites, setIncludeFavorites] = useState(false);
+  const [selectedChapters, setSelectedChapters] = useState<number[]>(() => {
+    const stored = localStorage.getItem('vocab-selected-chapters');
+    try {
+      return stored ? JSON.parse(stored) : [];
+    } catch {
+      return [];
+    }
+  });
+  const [includeFavorites, setIncludeFavorites] = useState<boolean>(() => {
+    const stored = localStorage.getItem('vocab-include-favorites');
+    return stored === 'true';
+  });
   const [gameStarted, setGameStarted] = useState(false);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [cardState, setCardState] = useState<0 | 1>(0); // 0: front, 1: back
@@ -194,15 +205,21 @@ const VocabularyFlashcards = () => {
   };
 
   const handleChapterToggle = (chapter: number) => {
-    setSelectedChapters((prev) =>
-      prev.includes(chapter)
+    setSelectedChapters((prev) => {
+      const next = prev.includes(chapter)
         ? prev.filter((c) => c !== chapter)
-        : [...prev, chapter]
-    );
+        : [...prev, chapter];
+      localStorage.setItem('vocab-selected-chapters', JSON.stringify(next));
+      return next;
+    });
   };
 
   const handleFavoritesToggle = () => {
-    setIncludeFavorites((prev) => !prev);
+    setIncludeFavorites((prev) => {
+      const next = !prev;
+      localStorage.setItem('vocab-include-favorites', String(next));
+      return next;
+    });
   };
 
   const handleStartGame = () => {
