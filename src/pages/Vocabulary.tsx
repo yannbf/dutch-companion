@@ -297,7 +297,7 @@ const Vocabulary = () => {
                           size="icon"
                           variant="ghost"
                           onClick={() => toggleFavorite(word.word)}
-                          className={favorite ? "text-red-500 hover:text-red-600" : "text-muted-foreground hover:text-red-500"}
+                          className={`touch-manipulation transition-all ${favorite ? "text-red-500 hover:text-red-600 hover:bg-red-50" : "text-muted-foreground hover:text-red-500 hover:bg-card hover:border-primary/50"}`}
                         >
                           <Heart className={`w-5 h-5 ${favorite ? "fill-current" : ""}`} />
                         </Button>

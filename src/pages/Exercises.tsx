@@ -43,7 +43,7 @@ const Exercises = () => {
             return (
               <Card
                 key={exercise.id}
-                className="cursor-pointer active:bg-accent/80 md:hover:bg-accent transition-colors"
+                className="cursor-pointer border-2 transition-all active:scale-95 touch-manipulation border-border bg-card hover:border-primary/50"
                 onClick={() => navigate(exercise.path)}
               >
                 <CardHeader className="flex flex-row items-center gap-4">
