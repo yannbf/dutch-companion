@@ -104,7 +104,7 @@ interface VocabResult {
 
 const VocabularyFlashcards = () => {
   const navigate = useNavigate();
-  const [selectedChapters, setSelectedChapters] = useState<number[]>([1, 2, 3]);
+  const [selectedChapters, setSelectedChapters] = useState<number[]>([]);
   const [includeFavorites, setIncludeFavorites] = useState(false);
   const [gameStarted, setGameStarted] = useState(false);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -296,7 +296,7 @@ const VocabularyFlashcards = () => {
                   onCheckedChange={handleFavoritesToggle}
                 />
                 <Label htmlFor="include-favorites" className="cursor-pointer">
-                  Include Favorites ({getFavoriteWords().length} words)
+                  Favorites ({getFavoriteWords().length} words)
                 </Label>
               </div>
             </div>
