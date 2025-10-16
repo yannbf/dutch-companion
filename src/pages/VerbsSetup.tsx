@@ -79,55 +79,64 @@ const VerbsSetup = () => {
           </div>
         </div>
 
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base">Game Mode</CardTitle>
-          </CardHeader>
-          <CardContent className="grid grid-cols-2 gap-2">
-            <Button
-              variant={mode === "short" ? "default" : "outline"}
-              className="h-auto py-3 flex-col gap-1 touch-manipulation"
+        <div className="space-y-3">
+          <h2 className="text-lg font-semibold">Game Mode</h2>
+          <div className="grid grid-cols-2 gap-3">
+            <Card
+              className={`cursor-pointer transition-all active:scale-95 touch-manipulation ${
+                mode === "short" ? "border-primary bg-accent" : "hover:border-primary/50"
+              }`}
               onClick={() => updateSetup({ mode: "short" })}
             >
-              <Zap className="w-4 h-4" />
-              <div className="text-sm font-semibold">Quick</div>
-              <div className="text-xs opacity-80">10 verbs</div>
-            </Button>
-            <Button
-              variant={mode === "long" ? "default" : "outline"}
-              className="h-auto py-3 flex-col gap-1 touch-manipulation"
+              <CardContent className="pt-6 pb-4 text-center space-y-2">
+                <Zap className={`w-8 h-8 mx-auto ${mode === "short" ? "text-primary" : "text-muted-foreground"}`} />
+                <div>
+                  <div className="font-bold text-lg">Quick</div>
+                  <div className="text-sm text-muted-foreground">10 verbs</div>
+                </div>
+              </CardContent>
+            </Card>
+            <Card
+              className={`cursor-pointer transition-all active:scale-95 touch-manipulation ${
+                mode === "long" ? "border-primary bg-accent" : "hover:border-primary/50"
+              }`}
               onClick={() => updateSetup({ mode: "long" })}
             >
-              <List className="w-4 h-4" />
-              <div className="text-sm font-semibold">Full</div>
-              <div className="text-xs opacity-80">All verbs</div>
-            </Button>
-          </CardContent>
-        </Card>
+              <CardContent className="pt-6 pb-4 text-center space-y-2">
+                <List className={`w-8 h-8 mx-auto ${mode === "long" ? "text-primary" : "text-muted-foreground"}`} />
+                <div>
+                  <div className="font-bold text-lg">Full</div>
+                  <div className="text-sm text-muted-foreground">All verbs</div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
 
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base">Verb Category</CardTitle>
-          </CardHeader>
-          <CardContent className="grid grid-cols-2 gap-2">
+        <div className="space-y-3">
+          <h2 className="text-lg font-semibold">Verb Category</h2>
+          <div className="grid grid-cols-2 gap-3">
             {([
               { key: "all", label: "All" },
               { key: "hebben", label: "hebben" },
               { key: "zijn", label: "zijn" },
               { key: "hebben/zijn", label: "hebben/zijn" },
             ] as Array<{ key: VerbCategory; label: string }>).map(({ key, label }) => (
-              <Button
+              <Card
                 key={key}
-                variant={category === key ? "default" : "outline"}
-                className="h-auto py-2.5 justify-between text-sm touch-manipulation"
+                className={`cursor-pointer transition-all active:scale-95 touch-manipulation ${
+                  category === key ? "border-primary bg-accent" : "hover:border-primary/50"
+                }`}
                 onClick={() => updateSetup({ category: key })}
               >
-                <span className="font-semibold">{label}</span>
-                <span className="text-xs opacity-80">{getVerbCount(key)}</span>
-              </Button>
+                <CardContent className="pt-6 pb-4 text-center space-y-1">
+                  <div className={`font-bold text-lg ${category === key ? "text-primary" : ""}`}>{label}</div>
+                  <div className="text-sm text-muted-foreground">{getVerbCount(key)} verbs</div>
+                </CardContent>
+              </Card>
             ))}
-          </CardContent>
-        </Card>
+          </div>
+        </div>
 
         <Button
           size="lg"
