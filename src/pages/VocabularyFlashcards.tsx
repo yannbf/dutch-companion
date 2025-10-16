@@ -278,7 +278,7 @@ const VocabularyFlashcards = () => {
   if (!gameStarted) {
     return (
       <div className="min-h-screen bg-background pb-20 pt-6 px-4">
-        <div className="max-w-2xl mx-auto space-y-6">
+        <div className="max-w-4xl mx-auto space-y-6">
           <div className="flex items-center gap-4">
             <Button variant="ghost" size="icon" onClick={() => navigate("/exercises")}>
               <ArrowLeft className="w-5 h-5" />
@@ -286,36 +286,65 @@ const VocabularyFlashcards = () => {
             <h1 className="text-2xl font-bold">Vocabulary Flashcards</h1>
           </div>
 
-          <div className="space-y-4">
+          <div className="space-y-6">
             <div>
-              <h2 className="text-lg font-semibold mb-3">Select Chapters</h2>
-              <div className="space-y-2">
-                {vocabularyData.map((chapter) => (
-                  <div key={chapter.chapter} className="flex items-center space-x-2">
-                    <Checkbox
-                      id={`chapter-${chapter.chapter}`}
-                      checked={selectedChapters.includes(chapter.chapter)}
-                      onCheckedChange={() => handleChapterToggle(chapter.chapter)}
-                    />
-                    <Label htmlFor={`chapter-${chapter.chapter}`} className="cursor-pointer">
-                      {chapter.chapter} - {chapter.title} ({chapter.words.length} words)
-                    </Label>
-                  </div>
-                ))}
+              <h2 className="text-lg font-semibold mb-4">Select Chapters</h2>
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                {vocabularyData.map((chapter) => {
+                  const isSelected = selectedChapters.includes(chapter.chapter);
+                  return (
+                    <button
+                      key={chapter.chapter}
+                      onClick={() => handleChapterToggle(chapter.chapter)}
+                      className={`
+                        relative p-4 rounded-lg border-2 transition-all text-left
+                        active:scale-95 touch-manipulation
+                        ${isSelected 
+                          ? 'border-primary bg-primary/10' 
+                          : 'border-border bg-card hover:border-primary/50'
+                        }
+                      `}
+                    >
+                      <div className="space-y-1">
+                        <div className="text-xs text-muted-foreground font-medium">Chapter {chapter.chapter}</div>
+                        <div className="text-sm font-bold line-clamp-2">{chapter.title}</div>
+                        <div className="text-xs text-muted-foreground">{chapter.words.length} words</div>
+                      </div>
+                      {isSelected && (
+                        <div className="absolute top-2 right-2 w-5 h-5 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xs">
+                          ✓
+                        </div>
+                      )}
+                    </button>
+                  );
+                })}
               </div>
             </div>
 
             <div className="border-t pt-4">
-              <div className="flex items-center space-x-2">
-                <Checkbox
-                  id="include-favorites"
-                  checked={includeFavorites}
-                  onCheckedChange={handleFavoritesToggle}
-                />
-                <Label htmlFor="include-favorites" className="cursor-pointer">
-                  ♥ Favorites ({getFavoriteWords().length} words)
-                </Label>
-              </div>
+              <button
+                onClick={handleFavoritesToggle}
+                className={`
+                  w-full p-4 rounded-lg border-2 transition-all text-left
+                  active:scale-95 touch-manipulation
+                  ${includeFavorites 
+                    ? 'border-primary bg-primary/10' 
+                    : 'border-border bg-card hover:border-primary/50'
+                  }
+                `}
+              >
+                <div className="flex items-center justify-between">
+                  <div className="space-y-1">
+                    <div className="text-sm font-bold">♥ Favorites</div>
+                    <div className="text-xs text-muted-foreground">{getFavoriteWords().length} words</div>
+                  </div>
+                  {includeFavorites && (
+                    <div className="w-5 h-5 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xs">
+                      ✓
+                    </div>
+                  )}
+                </div>
+              </button>
             </div>
 
             <Button

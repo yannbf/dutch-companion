@@ -1,4 +1,4 @@
-import { VocabularyChapter } from './types'
+import { VocabularyChapter, VocabularyWord } from './types'
 import { vocabularyChapter1 } from './vocabulary/chapter-1'
 import { vocabularyChapter2 } from './vocabulary/chapter-2'
 import { vocabularyChapter3 } from './vocabulary/chapter-3'
@@ -24,3 +24,5 @@ export const vocabularyData: VocabularyChapter[] = [
   vocabularyChapter10,
   vocabularyChapter11,
 ]
+
+export type { VocabularyWord }
