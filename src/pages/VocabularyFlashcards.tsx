@@ -1,13 +1,11 @@
 import { useState, useMemo, useEffect, useRef, useCallback } from "react";
 import { vocabularyData } from "@/data/vocabulary";
 import type { VocabularyWord } from "@/data/types";
-import { SwipeableCardPile, CardContent, CardState } from "@/components/SwipeableCardPile";
+import { SwipeableCardPile, CardContent } from "@/components/SwipeableCardPile";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, RotateCcw } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { speakerService } from "@/services/speaker";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Label } from "@/components/ui/label";
 import { ReactNode } from "react";
 
 // Convert VocabularyWord to generic CardContent format

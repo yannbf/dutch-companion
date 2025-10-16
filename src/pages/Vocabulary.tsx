@@ -4,7 +4,7 @@ import { vocabularyData, VocabularyWord } from "@/data/vocabulary";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Volume2, Search, Heart, Filter, Volume } from "lucide-react";
+import { Volume2, Search, Heart, Filter } from "lucide-react";
 import { speakerService } from "@/services/speaker";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -422,7 +422,7 @@ const Vocabulary = () => {
                               onClick={(e) => { e.stopPropagation(); if (word.exampleImperfectum) handleSpeak(word.exampleImperfectum); }}
                               disabled={!word.exampleImperfectum}
                             >
-                              <Volume className="w-4 h-4" />
+                              <Volume2 className="w-4 h-4" />
                             </Button>
                           </div>
 
@@ -437,7 +437,7 @@ const Vocabulary = () => {
                               onClick={(e) => { e.stopPropagation(); if (word.examplePerfectum) handleSpeak(word.examplePerfectum); }}
                               disabled={!word.examplePerfectum}
                             >
-                              <Volume className="w-4 h-4" />
+                              <Volume2 className="w-4 h-4" />
                             </Button>
                           </div>
                         </div>
