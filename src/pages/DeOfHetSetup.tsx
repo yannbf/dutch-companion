@@ -77,7 +77,7 @@ const DeOfHetSetup = () => {
                   disabled={selectedChapters.includes("all")}
                 />
                 <Label htmlFor={chapter.id} className="cursor-pointer">
-                  {chapter.title}
+                  {chapter.chapter} - {chapter.title}
                 </Label>
               </div>
             ))}

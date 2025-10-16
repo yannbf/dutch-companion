@@ -215,12 +215,12 @@ const Vocabulary = () => {
                         </SelectItem>
                         {/* Favorites option */}
                         <SelectItem value="favorites">
-                          Favorites ({getOptionCount("favorites", selectedCategory)} words)
+                          ♥ Favorites ({getOptionCount("favorites", selectedCategory)} words)
                         </SelectItem>
                         {/* Regular chapters */}
                         {vocabularyData.map(chapter => (
                           <SelectItem key={chapter.id} value={chapter.id}>
-                            {chapter.title} ({getOptionCount(chapter.id, selectedCategory)} words)
+                            {chapter.chapter} - {chapter.title} ({getOptionCount(chapter.id, selectedCategory)} words)
                           </SelectItem>
                         ))}
                       </SelectContent>

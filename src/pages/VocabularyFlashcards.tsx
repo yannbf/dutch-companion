@@ -298,7 +298,7 @@ const VocabularyFlashcards = () => {
                       onCheckedChange={() => handleChapterToggle(chapter.chapter)}
                     />
                     <Label htmlFor={`chapter-${chapter.chapter}`} className="cursor-pointer">
-                      Hoofdstuk {chapter.chapter} ({chapter.words.length} words)
+                      {chapter.chapter} - {chapter.title} ({chapter.words.length} words)
                     </Label>
                   </div>
                 ))}
@@ -313,7 +313,7 @@ const VocabularyFlashcards = () => {
                   onCheckedChange={handleFavoritesToggle}
                 />
                 <Label htmlFor="include-favorites" className="cursor-pointer">
-                  Favorites ({getFavoriteWords().length} words)
+                  ♥ Favorites ({getFavoriteWords().length} words)
                 </Label>
               </div>
             </div>

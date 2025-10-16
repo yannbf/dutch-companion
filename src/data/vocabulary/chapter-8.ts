@@ -3,7 +3,7 @@ import { VocabularyChapter } from '../types'
 export const vocabularyChapter8: VocabularyChapter = {
   chapter: 8,
   id: 'chapter-8',
-  title: 'Hoofdstuk 8',
+  title: 'Duurzaamheid',
   words: [
     // Vocabulaire
     {
