@@ -2,7 +2,6 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Zap, List, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { verbData } from "@/data/verbs";
 
 type VerbCategory = "all" | "hebben" | "zijn" | "hebben/zijn";
@@ -82,34 +81,50 @@ const VerbsSetup = () => {
         <div className="space-y-3">
           <h2 className="text-lg font-semibold">Game Mode</h2>
           <div className="grid grid-cols-2 gap-3">
-            <Card
-              className={`cursor-pointer transition-all active:scale-95 touch-manipulation ${
-                mode === "short" ? "border-primary bg-accent" : "hover:border-primary/50"
-              }`}
+            <button
               onClick={() => updateSetup({ mode: "short" })}
+              className={`
+                relative p-4 rounded-lg border-2 transition-all text-center
+                active:scale-95 touch-manipulation
+                ${mode === "short" 
+                  ? 'border-primary bg-primary/10' 
+                  : 'border-border bg-card hover:border-primary/50'
+                }
+              `}
             >
-              <CardContent className="pt-6 pb-4 text-center space-y-2">
+              <div className="space-y-2">
                 <Zap className={`w-8 h-8 mx-auto ${mode === "short" ? "text-primary" : "text-muted-foreground"}`} />
-                <div>
-                  <div className="font-bold text-lg">Quick</div>
-                  <div className="text-sm text-muted-foreground">10 verbs</div>
+                <div className="text-sm font-bold">Quick</div>
+                <div className="text-xs text-muted-foreground">10 verbs</div>
+              </div>
+              {mode === "short" && (
+                <div className="absolute top-2 right-2 w-5 h-5 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xs">
+                  ✓
                 </div>
-              </CardContent>
-            </Card>
-            <Card
-              className={`cursor-pointer transition-all active:scale-95 touch-manipulation ${
-                mode === "long" ? "border-primary bg-accent" : "hover:border-primary/50"
-              }`}
+              )}
+            </button>
+            <button
               onClick={() => updateSetup({ mode: "long" })}
+              className={`
+                relative p-4 rounded-lg border-2 transition-all text-center
+                active:scale-95 touch-manipulation
+                ${mode === "long" 
+                  ? 'border-primary bg-primary/10' 
+                  : 'border-border bg-card hover:border-primary/50'
+                }
+              `}
             >
-              <CardContent className="pt-6 pb-4 text-center space-y-2">
+              <div className="space-y-2">
                 <List className={`w-8 h-8 mx-auto ${mode === "long" ? "text-primary" : "text-muted-foreground"}`} />
-                <div>
-                  <div className="font-bold text-lg">Full</div>
-                  <div className="text-sm text-muted-foreground">All verbs</div>
+                <div className="text-sm font-bold">Full</div>
+                <div className="text-xs text-muted-foreground">All verbs</div>
+              </div>
+              {mode === "long" && (
+                <div className="absolute top-2 right-2 w-5 h-5 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xs">
+                  ✓
                 </div>
-              </CardContent>
-            </Card>
+              )}
+            </button>
           </div>
         </div>
 
@@ -122,18 +137,28 @@ const VerbsSetup = () => {
               { key: "zijn", label: "zijn" },
               { key: "hebben/zijn", label: "hebben/zijn" },
             ] as Array<{ key: VerbCategory; label: string }>).map(({ key, label }) => (
-              <Card
+              <button
                 key={key}
-                className={`cursor-pointer transition-all active:scale-95 touch-manipulation ${
-                  category === key ? "border-primary bg-accent" : "hover:border-primary/50"
-                }`}
                 onClick={() => updateSetup({ category: key })}
+                className={`
+                  relative p-4 rounded-lg border-2 transition-all text-left
+                  active:scale-95 touch-manipulation
+                  ${category === key 
+                    ? 'border-primary bg-primary/10' 
+                    : 'border-border bg-card hover:border-primary/50'
+                  }
+                `}
               >
-                <CardContent className="pt-6 pb-4 text-center space-y-1">
-                  <div className={`font-bold text-lg ${category === key ? "text-primary" : ""}`}>{label}</div>
-                  <div className="text-sm text-muted-foreground">{getVerbCount(key)} verbs</div>
-                </CardContent>
-              </Card>
+                <div className="space-y-1">
+                  <div className="text-sm font-bold">{label}</div>
+                  <div className="text-xs text-muted-foreground">{getVerbCount(key)} verbs</div>
+                </div>
+                {category === key && (
+                  <div className="absolute top-2 right-2 w-5 h-5 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xs">
+                    ✓
+                  </div>
+                )}
+              </button>
             ))}
           </div>
         </div>
