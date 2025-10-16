@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback, forwardRef } from "react";
+import { useState, useMemo, useCallback, forwardRef, useRef } from "react";
 import { Virtuoso } from 'react-virtuoso';
 import { vocabularyData, VocabularyWord } from "@/data/vocabulary";
 import { Button } from "@/components/ui/button";
@@ -90,6 +90,7 @@ const Vocabulary = () => {
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
   const { toggleFavorite, isFavorite, getFavoriteWords } = useFavorites();
+  const inputRef = useRef<HTMLInputElement | null>(null);
 
   const toggleExpanded = (id: string) => {
     setExpanded((prev) => ({ ...prev, [id]: !prev[id] }));
@@ -222,13 +223,14 @@ const Vocabulary = () => {
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="pl-10 pr-12"
+              ref={inputRef}
             />
             {hasSearch && (
               <Button
                 variant="ghost"
                 size="icon"
                 aria-label="Clear search"
-                onClick={() => setSearchTerm("")}
+                onClick={() => { setSearchTerm(""); requestAnimationFrame(() => inputRef.current?.focus()); }}
                 className="absolute right-10 top-1.5 h-7 w-7 rounded-full text-muted-foreground hover:text-foreground"
               >
                 ×
@@ -338,13 +340,13 @@ const Vocabulary = () => {
                 const showChapterInfo = (searchTerm.trim() && 'chapterTitle' in word && (word as VocabularyWordWithChapter).chapterTitle) || isFavoritesView;
                 const isExpanded = !!expanded[word.word];
                 return (
-                  <Card onClick={() => word.participium ? toggleExpanded(word.word) : undefined} className={`cursor-pointer select-none ${!word.participium ? 'cursor-default' : ''}`}>
+                  <Card onClick={() => word.participium ? toggleExpanded(word.word) : undefined} className={`relative cursor-pointer select-none ${!word.participium ? 'cursor-default' : ''}`}>
+                    <div className={`pointer-events-none absolute top-2 right-2 text-[10px] uppercase tracking-wider ${getCategoryTheme(word).badge}`}>
+                      {!word.participium ? getCategoryAbbr(word.category) : 'verb'}
+                    </div>
                     <CardHeader>
                       <CardTitle className="text-lg flex items-start justify-between">
                         <div className="flex-1 relative">
-                          <div className={`absolute top-0 right-0 text-[10px] uppercase tracking-wider ${getCategoryTheme(word).badge}`}>
-                            {!word.participium ? getCategoryAbbr(word.category) : 'verb'}
-                          </div>
                           <span>{word.article ? `${word.word}, ${word.article}` : word.word}</span>
                           {showChapterInfo && 'chapterTitle' in word && (word as VocabularyWordWithChapter).chapterTitle && (
                             <div className="text-sm text-muted-foreground mt-1">
