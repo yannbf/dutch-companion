@@ -379,7 +379,7 @@ const VocabularyFlashcards = () => {
   }
 
   return (
-    <div className="h-screen relative overflow-hidden flex flex-col bg-background">
+    <div className="h-screen relative overflow-hidden flex flex-col bg-background" style={{ touchAction: 'pan-x' }}>
       <div className="p-4 flex items-center justify-between border-b">
         <Button variant="ghost" size="icon" onClick={handleRestart}>
           <ArrowLeft className="w-5 h-5" />
