@@ -9,6 +9,13 @@ export interface VocabularyWord {
     | 'preposities'
     | 'werkwoorden'
     | 'scheidbare-werkwoorden'
+  // Optional verb metadata (only for 'werkwoorden' and 'scheidbare-werkwoorden')
+  imperfectumSingular?: string
+  imperfectumPlural?: string
+  hulpverbum?: 'hebben' | 'zijn' | 'hebben/zijn'
+  participium?: string
+  exampleImperfectum?: string
+  examplePerfectum?: string
 }
 
 export interface VocabularyChapter {

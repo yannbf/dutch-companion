@@ -161,7 +161,10 @@ const Vocabulary = () => {
       word.word.toLowerCase().includes(searchLower) ||
       word.translation.toLowerCase().includes(searchLower) ||
       word.exampleSentence.toLowerCase().includes(searchLower) ||
-      (word.article && word.article.toLowerCase().includes(searchLower))
+      (word.article && word.article.toLowerCase().includes(searchLower)) ||
+      (word.imperfectumSingular && word.imperfectumSingular.toLowerCase().includes(searchLower)) ||
+      (word.imperfectumPlural && word.imperfectumPlural.toLowerCase().includes(searchLower)) ||
+      (word.participium && word.participium.toLowerCase().includes(searchLower))
     );
   }, [wordsToDisplay, allWordsWithChapters, searchTerm]);
 
