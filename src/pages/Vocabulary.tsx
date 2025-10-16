@@ -1,9 +1,10 @@
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, forwardRef } from "react";
+import { Virtuoso } from 'react-virtuoso';
 import { vocabularyData, VocabularyWord } from "@/data/vocabulary";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Volume2, Search, Heart, Filter } from "lucide-react";
+import { Volume2, Search, Heart, Filter, Volume } from "lucide-react";
 import { speakerService } from "@/services/speaker";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -23,6 +24,32 @@ const getCategoryAbbr = (category: VocabularyWord['category']) => {
     case 'werkwoorden': return 'verb';
     case 'scheidbare-werkwoorden': return 'sep. verb';
     default: return '';
+  }
+};
+
+// Subtle color themes per category (text-only)
+const getCategoryTheme = (word: VocabularyWord) => {
+  // Treat entries with participium as verbs as well
+  const key: VocabularyWord['category'] | 'verb' = (word.participium ? 'werkwoorden' : word.category);
+  switch (key) {
+    case 'werkwoorden':
+    case 'scheidbare-werkwoorden':
+      return {
+        badge: 'text-amber-500/70',
+      };
+    case 'preposities':
+      return {
+        badge: 'text-violet-500/70',
+      };
+    case 'idioom':
+      return {
+        badge: 'text-rose-500/70',
+      };
+    case 'vocabulaire':
+    default:
+      return {
+        badge: 'text-sky-500/70',
+      };
   }
 };
 
@@ -57,10 +84,16 @@ const useFavorites = () => {
 
 const Vocabulary = () => {
   const [searchTerm, setSearchTerm] = useState("");
+  const hasSearch = searchTerm.trim().length > 0;
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [selectedChapter, setSelectedChapter] = useState<string>("all");
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
+  const [expanded, setExpanded] = useState<Record<string, boolean>>({});
   const { toggleFavorite, isFavorite, getFavoriteWords } = useFavorites();
+
+  const toggleExpanded = (id: string) => {
+    setExpanded((prev) => ({ ...prev, [id]: !prev[id] }));
+  };
 
   // Get all unique categories from vocabulary data
   const allCategories = useMemo(() => {
@@ -180,8 +213,8 @@ const Vocabulary = () => {
       <div className="max-w-2xl mx-auto">
         <h1 className="text-3xl font-bold mb-6 text-center">Vocabulary</h1>
 
-        {/* Search bar with filter button */}
-        <div className="mb-6">
+        {/* Search bar with filter button (sticky) */}
+        <div className="sticky top-0 z-20 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 mb-6 pt-2 pb-3">
           <div className="relative flex items-center">
             <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
             <Input
@@ -190,6 +223,17 @@ const Vocabulary = () => {
               onChange={(e) => setSearchTerm(e.target.value)}
               className="pl-10 pr-12"
             />
+            {hasSearch && (
+              <Button
+                variant="ghost"
+                size="icon"
+                aria-label="Clear search"
+                onClick={() => setSearchTerm("")}
+                className="absolute right-10 top-1.5 h-7 w-7 rounded-full text-muted-foreground hover:text-foreground"
+              >
+                ×
+              </Button>
+            )}
             <Dialog open={isFilterOpen} onOpenChange={setIsFilterOpen}>
               <DialogTrigger asChild>
                 <Button
@@ -275,61 +319,132 @@ const Vocabulary = () => {
 
         <div className="space-y-4">
           {displayWords.length > 0 ? (
-            displayWords.map((word, idx) => {
-              const favorite = isFavorite(word.word);
-              // Show chapter info for search results (when searching across chapters) or favorites view
-              const showChapterInfo = (searchTerm.trim() && 'chapterTitle' in word && word.chapterTitle) || isFavoritesView;
-              return (
-                <Card key={idx}>
-                  <CardHeader>
-                    <CardTitle className="text-lg flex items-start justify-between">
-                      <div className="flex-1 relative">
-                        <div className="absolute top-0 right-0 text-[10px] text-muted-foreground/40 uppercase tracking-wider">
-                          {getCategoryAbbr(word.category)}
-                        </div>
-                        <span>{word.article ? `${word.word}, ${word.article}` : word.word}</span>
-                        {/* Show chapter info for search results or favorites view */}
-                        {showChapterInfo && 'chapterTitle' in word && word.chapterTitle && (
-                          <div className="text-sm text-muted-foreground mt-1">
-                            From: {(word as VocabularyWordWithChapter).chapterTitle}
+            <Virtuoso
+              useWindowScroll
+              increaseViewportBy={{ top: 400, bottom: 600 }}
+              components={{
+                // Make the inner list apply vertical spacing between items, matching the old layout
+                List: forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(({ style, children, ...props }, ref) => (
+                  <div ref={ref} style={style} {...props} className="space-y-4" >
+                    {children}
+                  </div>
+                )),
+                Footer: () => <div className="h-24" />,
+              }}
+              totalCount={displayWords.length}
+              itemContent={(index) => {
+                const word = displayWords[index];
+                const favorite = isFavorite(word.word);
+                const showChapterInfo = (searchTerm.trim() && 'chapterTitle' in word && (word as VocabularyWordWithChapter).chapterTitle) || isFavoritesView;
+                const isExpanded = !!expanded[word.word];
+                return (
+                  <Card onClick={() => word.participium ? toggleExpanded(word.word) : undefined} className={`cursor-pointer select-none ${!word.participium ? 'cursor-default' : ''}`}>
+                    <CardHeader>
+                      <CardTitle className="text-lg flex items-start justify-between">
+                        <div className="flex-1 relative">
+                          <div className={`absolute top-0 right-0 text-[10px] uppercase tracking-wider ${getCategoryTheme(word).badge}`}>
+                            {!word.participium ? getCategoryAbbr(word.category) : 'verb'}
                           </div>
-                        )}
-                      </div>
-                      <div className="flex items-center gap-2 ml-4">
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          onClick={() => toggleFavorite(word.word)}
-                          className={`touch-manipulation transition-all ${favorite ? "text-red-500 hover:text-red-600 hover:bg-red-50" : "text-muted-foreground hover:text-red-500 hover:bg-card hover:border-primary/50"}`}
-                        >
-                          <Heart className={`w-5 h-5 ${favorite ? "fill-current" : ""}`} />
-                        </Button>
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          onClick={() => handleSpeak(word.word)}
-                        >
-                          <Volume2 className="w-5 h-5" />
-                        </Button>
-                      </div>
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-muted-foreground mb-2">{word.translation}</p>
-                    <div className="flex items-start gap-2">
-                      <p className="italic flex-1">{word.exampleSentence}</p>
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        onClick={() => handleSpeak(word.exampleSentence)}
-                      >
-                        <Volume2 className="w-4 h-4" />
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              );
-            })
+                          <span>{word.article ? `${word.word}, ${word.article}` : word.word}</span>
+                          {showChapterInfo && 'chapterTitle' in word && (word as VocabularyWordWithChapter).chapterTitle && (
+                            <div className="text-sm text-muted-foreground mt-1">
+                              From: {(word as VocabularyWordWithChapter).chapterTitle}
+                            </div>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-2 ml-4">
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            onClick={(e) => { e.stopPropagation(); toggleFavorite(word.word); }}
+                            className={`touch-manipulation transition-all ${favorite ? "text-red-500 hover:text-red-600 hover:bg-red-50" : "text-muted-foreground hover:text-red-500 hover:bg-card hover:border-primary/50"}`}
+                          >
+                            <Heart className={`w-5 h-5 ${favorite ? "fill-current" : ""}`} />
+                          </Button>
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            onClick={(e) => { e.stopPropagation(); handleSpeak(word.word); }}
+                          >
+                            <Volume2 className="w-5 h-5" />
+                          </Button>
+                        </div>
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      {!isExpanded && (
+                        <div>
+                          <p className="text-muted-foreground mb-2">{word.translation}</p>
+                          <div className="flex items-start gap-2">
+                            <p className="italic flex-1">{word.exampleSentence}</p>
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              onClick={(e) => { e.stopPropagation(); handleSpeak(word.exampleSentence); }}
+                            >
+                              <Volume2 className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        </div>
+                      )}
+
+                      {isExpanded && (
+                        <div className="space-y-3">
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <div>
+                              <div className="text-xs text-muted-foreground">Imperfectum (sg.)</div>
+                              <div className="font-medium">{word.imperfectumSingular || '-'}</div>
+                            </div>
+                            <div>
+                              <div className="text-xs text-muted-foreground">Imperfectum (pl.)</div>
+                              <div className="font-medium">{word.imperfectumPlural || '-'}</div>
+                            </div>
+                            <div>
+                              <div className="text-xs text-muted-foreground">Hulpverbum</div>
+                              <div className="font-medium">{word.hulpverbum || '-'}</div>
+                            </div>
+                            <div>
+                              <div className="text-xs text-muted-foreground">Participium</div>
+                              <div className="font-medium">{word.participium || '-'}</div>
+                            </div>
+                          </div>
+
+                          <div className="grid grid-cols-[1fr_auto] items-start gap-2">
+                            <div>
+                              <div className="text-xs text-muted-foreground">Voorbeeld (Imperfectum)</div>
+                              <div className="italic">{word.exampleImperfectum || '-'}</div>
+                            </div>
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              onClick={(e) => { e.stopPropagation(); if (word.exampleImperfectum) handleSpeak(word.exampleImperfectum); }}
+                              disabled={!word.exampleImperfectum}
+                            >
+                              <Volume className="w-4 h-4" />
+                            </Button>
+                          </div>
+
+                          <div className="grid grid-cols-[1fr_auto] items-start gap-2">
+                            <div>
+                              <div className="text-xs text-muted-foreground">Voorbeeld (Perfectum)</div>
+                              <div className="italic">{word.examplePerfectum || '-'}</div>
+                            </div>
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              onClick={(e) => { e.stopPropagation(); if (word.examplePerfectum) handleSpeak(word.examplePerfectum); }}
+                              disabled={!word.examplePerfectum}
+                            >
+                              <Volume className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                );
+              }}
+            />
           ) : (
             <Card>
               <CardContent className="py-8">
