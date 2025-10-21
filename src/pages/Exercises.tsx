@@ -8,14 +8,14 @@ const Exercises = () => {
   const exercises = [
     {
       id: "verbs",
-      title: "Onregelmatige werkwoorden",
+      title: "Verb tenses",
       description: "Practice irregular Dutch verbs with flashcards",
       icon: GraduationCap,
       path: "/exercises/verbs",
     },
     {
       id: "vocabulary",
-      title: "Vocabulary",
+      title: "Vocabulary Flashcards",
       description: "Learn vocabulary with flashcards from different chapters",
       icon: BookOpen,
       path: "/exercises/vocabulary",
