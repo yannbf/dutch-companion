@@ -14,6 +14,8 @@ import VocabularyMatch from "./pages/VocabularyMatch";
 import Settings from "./pages/Settings";
 import DeOfHetSetup from "./pages/DeOfHetSetup";
 import DeOfHet from "./pages/DeOfHet";
+import SeparableVerbsSetup from "./pages/SeparableVerbsSetup";
+import SeparableVerbs from "./pages/SeparableVerbs";
 import NotFound from "./pages/NotFound";
 import { BottomNav } from "./components/BottomNav";
 
@@ -37,6 +39,8 @@ const App = () => (
             <Route path="/exercises/vocabulary-match/play" element={<VocabularyMatch />} />
             <Route path="/exercises/deofhet" element={<DeOfHetSetup />} />
             <Route path="/exercises/deofhet/play" element={<DeOfHet />} />
+            <Route path="/exercises/separable-verbs" element={<SeparableVerbsSetup />} />
+            <Route path="/exercises/separable-verbs/play" element={<SeparableVerbs />} />
             <Route path="/vocabulary" element={<Vocabulary />} />
             <Route path="/settings" element={<Settings />} />
             <Route path="*" element={<NotFound />} />

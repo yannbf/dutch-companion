@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import { GraduationCap, BookOpen, FileText } from "lucide-react";
+import { GraduationCap, BookOpen, FileText, Shuffle } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 
 const Exercises = () => {
@@ -26,6 +26,13 @@ const Exercises = () => {
       description: "Match Dutch words with English translations",
       icon: FileText,
       path: "/exercises/vocabulary-match",
+    },
+    {
+      id: "separable-verbs",
+      title: "Separable Verbs",
+      description: "Build sentences with separable verbs by arranging words",
+      icon: Shuffle,
+      path: "/exercises/separable-verbs",
     },
   ];
 
