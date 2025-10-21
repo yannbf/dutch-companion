@@ -22,7 +22,7 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
-        <div className="pb-16 ios-viewport-fix">
+        <div className="ios-viewport-fix">
           <Routes>
             <Route path="/" element={<Navigate to="/exercises" replace />} />
             <Route path="/exercises" element={<Exercises />} />
