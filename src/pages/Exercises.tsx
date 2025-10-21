@@ -20,13 +20,13 @@ const Exercises = () => {
       icon: BookOpen,
       path: "/exercises/vocabulary",
     },
-    // {
-    //   id: "deofhet",
-    //   title: "De of Het",
-    //   description: "Practice Dutch articles by swiping left or right",
-    //   icon: FileText,
-    //   path: "/exercises/deofhet",
-    // },
+    {
+      id: "vocabulary-match",
+      title: "Vocabulary Match",
+      description: "Match Dutch words with English translations",
+      icon: FileText,
+      path: "/exercises/vocabulary-match",
+    },
   ];
 
   return (
