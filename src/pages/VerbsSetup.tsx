@@ -95,7 +95,7 @@ const VerbsSetup = () => {
                 <div className="text-xs text-muted-foreground">10 verbs</div>
               </div>
               {mode === "short" && (
-                <div className="absolute top-2 right-2 w-5 h-5 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xs">
+                <div className="absolute top-1.5 right-1.5 w-4 h-4 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-[10px] font-bold">
                   ✓
                 </div>
               )}
@@ -117,7 +117,7 @@ const VerbsSetup = () => {
                 <div className="text-xs text-muted-foreground">All verbs</div>
               </div>
               {mode === "long" && (
-                <div className="absolute top-2 right-2 w-5 h-5 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xs">
+                <div className="absolute top-1.5 right-1.5 w-4 h-4 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-[10px] font-bold">
                   ✓
                 </div>
               )}
@@ -151,7 +151,7 @@ const VerbsSetup = () => {
                   <div className="text-xs text-muted-foreground">{getVerbCount(key)} verbs</div>
                 </div>
                 {category === key && (
-                  <div className="absolute top-2 right-2 w-5 h-5 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xs">
+                  <div className="absolute top-1.5 right-1.5 w-4 h-4 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-[10px] font-bold">
                     ✓
                   </div>
                 )}

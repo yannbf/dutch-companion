@@ -85,7 +85,7 @@ const VocabularyMatchSetup = () => {
                       <div className="text-xs text-muted-foreground">{chapter.title} ({chapter.words.length} words)</div>
                     </div>
                     {isSelected && (
-                      <div className="absolute top-2 right-2 w-5 h-5 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xs">
+                      <div className="absolute top-1.5 right-1.5 w-4 h-4 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-[10px] font-bold">
                         ✓
                       </div>
                     )}
@@ -113,7 +113,7 @@ const VocabularyMatchSetup = () => {
                   <div className="text-xs text-muted-foreground">{favoriteWords.length} words</div>
                 </div>
                 {includeFavorites && (
-                  <div className="w-5 h-5 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xs">
+                  <div className="w-4 h-4 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-[10px] font-bold">
                     ✓
                   </div>
                 )}
