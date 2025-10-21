@@ -3,11 +3,13 @@ import { useNavigate } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { vocabularyData, VocabularyWord } from "@/data/vocabulary";
-import { motion, useMotionValue, useTransform } from "framer-motion";
+import { motion, useMotionValue, useTransform, PanInfo } from "framer-motion";
 import { ProgressIndicator } from "@/components/ProgressIndicator";
 import { SummaryScreen } from "@/components/SummaryScreen";
 import { hapticService } from "@/services/haptic";
 import { createLocalStorageStore } from "@/lib/localStorage";
+import { reviewTracker } from "@/lib/reviewTracker";
+import { exerciseStats } from "@/lib/exerciseStats";
 
 interface WordResult {
   word: VocabularyWord;
@@ -54,14 +56,14 @@ const globalSettingsStore = createLocalStorageStore("taal-boost-global-settings"
     }
 
     return articledWords;
-  }, []);
+  }, [deOfHetStore, globalSettingsStore]);
 
   const currentWord = words[currentIndex];
   const x = useMotionValue(0);
   const rotate = useTransform(x, [-200, 200], [-25, 25]);
   const opacity = useTransform(x, [-200, -100, 0, 100, 200], [0, 1, 1, 1, 0]);
 
-  const handleDragEnd = (_: any, info: any) => {
+  const handleDragEnd = (_: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
     const threshold = 100;
     
     if (Math.abs(info.offset.x) > threshold) {
@@ -72,6 +74,18 @@ const globalSettingsStore = createLocalStorageStore("taal-boost-global-settings"
       hapticService.medium();
       
       setResults([...results, { word: currentWord, correct: isCorrect }]);
+
+      // Track incorrect/correct for review
+      if (isCorrect) {
+        reviewTracker.markCorrect(currentWord.word);
+      } else {
+        // Words in this exercise always have an article, map to the chapter by id
+        reviewTracker.addIncorrect(currentWord.word);
+      }
+
+      // Record attempt in stats
+      const inferredChapter = reviewTracker.findChapterIdsForWord(currentWord.word)[0]
+      exerciseStats.recordAttempt('deofhet', inferredChapter, currentWord.word, isCorrect)
       
       if (currentIndex < words.length - 1) {
         setTimeout(() => {

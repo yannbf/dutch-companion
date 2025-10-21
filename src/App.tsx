@@ -8,6 +8,7 @@ import VerbsSetup from "./pages/VerbsSetup";
 import Verbs from "./pages/Verbs";
 import VocabularyFlashcards from "./pages/VocabularyFlashcards";
 import Vocabulary from "./pages/Vocabulary";
+import VocabularyStats from "./pages/VocabularyStats";
 import Settings from "./pages/Settings";
 import DeOfHetSetup from "./pages/DeOfHetSetup";
 import DeOfHet from "./pages/DeOfHet";
@@ -29,6 +30,7 @@ const App = () => (
             <Route path="/exercises/verbs" element={<VerbsSetup />} />
             <Route path="/exercises/verbs/play" element={<Verbs />} />
             <Route path="/exercises/vocabulary" element={<VocabularyFlashcards />} />
+            <Route path="/exercises/vocabulary/stats" element={<VocabularyStats />} />
             <Route path="/exercises/deofhet" element={<DeOfHetSetup />} />
             <Route path="/exercises/deofhet/play" element={<DeOfHet />} />
             <Route path="/vocabulary" element={<Vocabulary />} />

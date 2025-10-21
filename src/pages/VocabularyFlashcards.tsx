@@ -3,11 +3,13 @@ import { vocabularyData } from "@/data/vocabulary";
 import type { VocabularyWord } from "@/data/types";
 import { SwipeableCardPile, CardContent } from "@/components/SwipeableCardPile";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, RotateCcw } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { ArrowLeft, RotateCcw, BarChart2 } from "lucide-react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { speakerService } from "@/services/speaker";
 import { ReactNode } from "react";
 import { createLocalStorageStore } from "@/lib/localStorage";
+import { reviewTracker } from "@/lib/reviewTracker";
+import { exerciseStats } from "@/lib/exerciseStats";
 
 // Convert VocabularyWord to generic CardContent format
 const createVocabularyCardContent = (word: VocabularyWord): CardContent => ({
@@ -111,13 +113,21 @@ const includeFavoritesStore = createLocalStorageStore<boolean>('vocab-include-fa
 
 const VocabularyFlashcards = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [selectedChapters, setSelectedChapters] = useState<number[]>(() => {
     return selectedChaptersStore.get();
   });
   const [includeFavorites, setIncludeFavorites] = useState<boolean>(() => {
     return includeFavoritesStore.get();
   });
-  const [gameStarted, setGameStarted] = useState(false);
+  const [gameStarted, setGameStarted] = useState<boolean>(() => {
+    const hasReviewParam = Boolean(
+      searchParams.get('review') ||
+      searchParams.get('reviewChapter') ||
+      searchParams.get('reviewWords')
+    );
+    return hasReviewParam;
+  });
   const [currentIndex, setCurrentIndex] = useState(0);
   const [cardState, setCardState] = useState<0 | 1>(0); // 0: front, 1: back
   const [points, setPoints] = useState(0);
@@ -132,28 +142,48 @@ const VocabularyFlashcards = () => {
   const sessionWords = useMemo(() => {
     if (!gameStarted) return [];
 
-    const words = [];
+    const reviewAll = searchParams.get('review') === 'all';
+    const reviewChapter = searchParams.get('reviewChapter');
+    const reviewWordsParam = searchParams.get('reviewWords');
 
-    // Add words from selected chapters
+    let words: VocabularyWord[] = [];
+
+    if (reviewAll) {
+      const wordsToReview = reviewTracker.getAllWords();
+      words = reviewTracker.resolveWordsToEntries(wordsToReview);
+    } else if (reviewChapter) {
+      const wordsToReview = reviewTracker.getWordsForChapter(reviewChapter);
+      words = reviewTracker.resolveWordsToEntries(wordsToReview);
+    } else if (reviewWordsParam) {
+      const list = reviewWordsParam
+        .split(',')
+        .map(s => decodeURIComponent(s.trim()))
+        .filter(Boolean);
+      words = reviewTracker.resolveWordsToEntries(list);
+    }
+
+    if (words.length > 0) {
+      return [...words].sort(() => Math.random() - 0.5);
+    }
+
+    const normalWords: VocabularyWord[] = [];
+
     if (selectedChapters.length > 0) {
-      words.push(...vocabularyData
+      normalWords.push(...vocabularyData
         .filter((item) => selectedChapters.includes(item.chapter))
         .flatMap((chapter) => chapter.words));
     }
 
-    // Add favorite words if selected
     if (includeFavorites) {
-      words.push(...getFavoriteWords());
+      normalWords.push(...getFavoriteWords());
     }
 
-    // Remove duplicates (in case a favorite word is also in a selected chapter)
-    const uniqueWords = words.filter((word, index, self) =>
+    const uniqueWords = normalWords.filter((word, index, self) =>
       index === self.findIndex(w => w.word === word.word)
     );
 
-    // Shuffle words
     return [...uniqueWords].sort(() => Math.random() - 0.5);
-  }, [selectedChapters, includeFavorites, gameStarted, getFavoriteWords]);
+  }, [selectedChapters, includeFavorites, gameStarted, getFavoriteWords, searchParams]);
 
   const currentWord = sessionWords[currentIndex];
 
@@ -238,9 +268,23 @@ const VocabularyFlashcards = () => {
 
     if (correct) {
       setPoints((prev) => prev + 1);
+      if (currentWord) {
+        reviewTracker.markCorrect(currentWord.word);
+      }
     }
 
     setResults((prev) => [...prev, { word: currentWord.word, correct }]);
+
+    // Record attempt for stats (best-effort chapter inference)
+    if (currentWord) {
+      const inferredChapter = reviewTracker.findChapterIdsForWord(currentWord.word)[0]
+      exerciseStats.recordAttempt('vocabulary', inferredChapter, currentWord.word, correct)
+    }
+
+    if (!correct && currentWord) {
+      const chapterIds = reviewTracker.findChapterIdsForWord(currentWord.word);
+      reviewTracker.addIncorrect(currentWord.word, chapterIds[0]);
+    }
 
     // Reset card state and move to next card
     setCardState(0);
@@ -264,6 +308,9 @@ const VocabularyFlashcards = () => {
     setPoints(0);
     setResults([]);
     setShowSummary(false);
+    if (searchParams.get('review') || searchParams.get('reviewChapter') || searchParams.get('reviewWords')) {
+      navigate('/exercises/vocabulary');
+    }
   };
 
   const handleRetry = () => {
@@ -279,11 +326,16 @@ const VocabularyFlashcards = () => {
     return (
       <div className="min-h-screen bg-background pb-20 pt-6 px-4">
         <div className="max-w-4xl mx-auto space-y-6">
-          <div className="flex items-center gap-4">
-            <Button variant="ghost" size="icon" onClick={() => navigate("/exercises")}>
-              <ArrowLeft className="w-5 h-5" />
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <Button variant="ghost" size="icon" onClick={() => navigate("/exercises")}>
+                <ArrowLeft className="w-5 h-5" />
+              </Button>
+              <h1 className="text-2xl font-bold">Vocabulary Flashcards</h1>
+            </div>
+            <Button variant="ghost" size="icon" onClick={() => navigate('/exercises/vocabulary/stats')}>
+              <BarChart2 className="w-5 h-5" />
             </Button>
-            <h1 className="text-2xl font-bold">Vocabulary Flashcards</h1>
           </div>
 
           <div className="space-y-6">
@@ -389,7 +441,9 @@ const VocabularyFlashcards = () => {
         <div className="text-sm font-medium">
           {currentIndex + 1} / {sessionWords.length}
         </div>
-        <div className="text-sm font-medium">Score: {points}</div>
+        <div className="flex items-center gap-2">
+          <div className="text-sm font-medium">Score: {points}</div>
+        </div>
       </div>
 
       <Button

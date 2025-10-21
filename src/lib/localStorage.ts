@@ -141,6 +141,9 @@ export const localStorageUtils = {
       'vocab-include-favorites',
       'verbs-game-setup',
       'deofhet-chapters',
+      'vocab-review-words',
+      'exercise-stats-v1',
+      'exercise-stats-v2',
       'global-randomOrder',
       VERSION_KEY, // Also clear the version key so next load will re-initialize
     ]
