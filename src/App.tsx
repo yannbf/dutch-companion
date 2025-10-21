@@ -22,18 +22,20 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Navigate to="/exercises" replace />} />
-          <Route path="/exercises" element={<Exercises />} />
-          <Route path="/exercises/verbs" element={<VerbsSetup />} />
-          <Route path="/exercises/verbs/play" element={<Verbs />} />
-          <Route path="/exercises/vocabulary" element={<VocabularyFlashcards />} />
-          <Route path="/exercises/deofhet" element={<DeOfHetSetup />} />
-          <Route path="/exercises/deofhet/play" element={<DeOfHet />} />
-          <Route path="/vocabulary" element={<Vocabulary />} />
-          <Route path="/settings" element={<Settings />} />
-          <Route path="*" element={<NotFound />} />
-        </Routes>
+        <div className="pb-16 ios-viewport-fix">
+          <Routes>
+            <Route path="/" element={<Navigate to="/exercises" replace />} />
+            <Route path="/exercises" element={<Exercises />} />
+            <Route path="/exercises/verbs" element={<VerbsSetup />} />
+            <Route path="/exercises/verbs/play" element={<Verbs />} />
+            <Route path="/exercises/vocabulary" element={<VocabularyFlashcards />} />
+            <Route path="/exercises/deofhet" element={<DeOfHetSetup />} />
+            <Route path="/exercises/deofhet/play" element={<DeOfHet />} />
+            <Route path="/vocabulary" element={<Vocabulary />} />
+            <Route path="/settings" element={<Settings />} />
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </div>
         <BottomNav />
       </BrowserRouter>
     </TooltipProvider>
