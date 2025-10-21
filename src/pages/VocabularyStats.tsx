@@ -63,7 +63,7 @@ const VocabularyStats = () => {
               </div>
               <div className="text-center p-3 bg-muted/50 rounded-lg">
                 <div className="text-2xl font-bold text-orange-600">{overallWrong}</div>
-                <div className="text-sm text-muted-foreground">Incorrect words</div>
+                <div className="text-sm text-muted-foreground">Words mistakes</div>
               </div>
               <div className="text-center p-3 bg-muted/50 rounded-lg">
                 <div className="text-2xl font-bold text-green-600">{overallSeen > 0 ? Math.round(((overallSeen - overallWrong) / overallSeen) * 100) : 0}%</div>
@@ -73,7 +73,7 @@ const VocabularyStats = () => {
           </CardContent>
         </Card>
 
-        <Card>
+        {/* <Card>
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
@@ -83,7 +83,7 @@ const VocabularyStats = () => {
               <Switch id="wrong-words-toggle" checked={showOnlyWrong} onCheckedChange={setShowOnlyWrong} />
             </div>
           </CardContent>
-        </Card>
+        </Card> */}
 
         {visibleCounts.length > 0 && (
           <Card>

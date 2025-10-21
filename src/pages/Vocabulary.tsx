@@ -234,6 +234,10 @@ const Vocabulary = () => {
                 variant="ghost"
                 size="icon"
                 aria-label="Clear search"
+                type="button"
+                tabIndex={-1}
+                onPointerDown={(e) => e.preventDefault()}
+                onMouseDown={(e) => e.preventDefault()}
                 onClick={() => { setSearchTerm(""); requestAnimationFrame(() => inputRef.current?.focus()); }}
                 className="absolute right-10 top-1.5 h-7 w-7 rounded-full text-muted-foreground hover:text-foreground"
               >

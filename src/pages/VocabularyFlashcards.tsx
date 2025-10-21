@@ -309,7 +309,7 @@ const VocabularyFlashcards = () => {
     setResults([]);
     setShowSummary(false);
     if (searchParams.get('review') || searchParams.get('reviewChapter') || searchParams.get('reviewWords')) {
-      navigate('/exercises/vocabulary');
+      navigate('/exercises/vocabulary/stats');
     }
   };
 
@@ -340,7 +340,6 @@ const VocabularyFlashcards = () => {
 
           <div className="space-y-6">
             <div>
-              <h2 className="text-lg font-semibold mb-4">Select Chapters</h2>
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
                 {vocabularyData.map((chapter) => {
                   const isSelected = selectedChapters.includes(chapter.chapter);
@@ -358,9 +357,8 @@ const VocabularyFlashcards = () => {
                       `}
                     >
                       <div className="space-y-1">
-                        <div className="text-xs text-muted-foreground font-medium">Chapter {chapter.chapter}</div>
-                        <div className="text-sm font-bold line-clamp-2">{chapter.title}</div>
-                        <div className="text-xs text-muted-foreground">{chapter.words.length} words</div>
+                        <div className="text-sm font-bold line-clamp-2">Chapter {chapter.chapter}</div>
+                        <div className="text-xs text-muted-foreground">{chapter.title} ({chapter.words.length} words)</div>
                       </div>
                       {isSelected && (
                         <div className="absolute top-2 right-2 w-5 h-5 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xs">
@@ -424,7 +422,7 @@ const VocabularyFlashcards = () => {
           <div className="flex gap-4 justify-center">
             <Button onClick={handleRetry}>Try Again</Button>
             <Button variant="outline" onClick={handleRestart}>
-              Change Settings
+              Go back
             </Button>
           </div>
         </div>
@@ -455,7 +453,7 @@ const VocabularyFlashcards = () => {
         <RotateCcw className="w-5 h-5" />
       </Button>
 
-      <div className="flex-1 flex items-center justify-center pointer-events-none">
+      <div className="flex-1 flex items-center justify-center pointer-events-none -mt-16">
         <div className="pointer-events-auto">
           {sessionWords.length > 0 && (
             <VocabularyCardPile
