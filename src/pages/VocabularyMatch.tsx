@@ -224,7 +224,7 @@ const VocabularyMatch = () => {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-2 gap-3">
           {/* Dutch words column */}
           <div className="space-y-3">
             {currentPairs.map((pair, index) => {
