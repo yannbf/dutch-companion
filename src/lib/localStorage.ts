@@ -11,6 +11,8 @@ const VERSION_KEY = 'taal-boost-version'
 
 // Check if we need to flush localStorage due to version mismatch or corruption
 const checkAndFlushIfNeeded = (): boolean => {
+  // Disable this for now
+  return
   try {
     const storedVersion = localStorage.getItem(VERSION_KEY)
 
