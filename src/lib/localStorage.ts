@@ -1,7 +1,49 @@
 /**
  * Robust localStorage utility with error handling and fallbacks
  * Handles common localStorage issues like corruption, quota exceeded, and parsing errors
+ *
+ * Version-based flushing mechanism ensures corrupted data is cleared on app updates
  */
+
+// Current app version for localStorage compatibility checking
+const CURRENT_APP_VERSION = '1.0.1' // Increment this when breaking changes are made
+const VERSION_KEY = 'taal-boost-version'
+
+// Check if we need to flush localStorage due to version mismatch or corruption
+const checkAndFlushIfNeeded = (): boolean => {
+  try {
+    const storedVersion = localStorage.getItem(VERSION_KEY)
+
+    // If no version exists or version mismatch, flush and update
+    if (!storedVersion || storedVersion !== CURRENT_APP_VERSION) {
+      console.log(
+        `localStorage version mismatch or missing. Stored: ${storedVersion}, Current: ${CURRENT_APP_VERSION}. Flushing data...`
+      )
+
+      // Clear all app-related localStorage data
+      localStorageUtils.clearAppData()
+
+      // Set the current version
+      localStorage.setItem(VERSION_KEY, CURRENT_APP_VERSION)
+
+      return true
+    }
+
+    return false
+  } catch (error) {
+    console.warn('Failed to check localStorage version, flushing data:', error)
+    try {
+      localStorageUtils.clearAppData()
+      localStorage.setItem(VERSION_KEY, CURRENT_APP_VERSION)
+    } catch (flushError) {
+      console.error('Failed to flush localStorage:', flushError)
+    }
+    return true
+  }
+}
+
+// Initialize localStorage - this runs once when the module is first imported
+checkAndFlushIfNeeded()
 
 // Generic localStorage operations with error handling
 export const localStorageUtils = {
@@ -98,6 +140,7 @@ export const localStorageUtils = {
       'verbs-game-setup',
       'deofhet-chapters',
       'global-randomOrder',
+      VERSION_KEY, // Also clear the version key so next load will re-initialize
     ]
 
     appKeys.forEach((key) => {
@@ -191,6 +234,33 @@ export const localStorageUtils = {
       corruptedKeys,
       totalKeys: localStorage.length,
       totalSize,
+    }
+  },
+
+  /**
+   * Force flush all app data (useful for manual reset)
+   */
+  forceFlush(): void {
+    console.log('Forcing localStorage flush...')
+    this.clearAppData()
+    localStorage.setItem(VERSION_KEY, CURRENT_APP_VERSION)
+  },
+
+  /**
+   * Get current app version
+   */
+  getCurrentVersion(): string {
+    return CURRENT_APP_VERSION
+  },
+
+  /**
+   * Get stored app version
+   */
+  getStoredVersion(): string | null {
+    try {
+      return localStorage.getItem(VERSION_KEY)
+    } catch {
+      return null
     }
   },
 }
