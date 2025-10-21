@@ -3,36 +3,33 @@ import { useNavigate } from "react-router-dom";
 import { Zap, List, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { verbData } from "@/data/verbs";
+import { createLocalStorageStore } from "@/lib/localStorage";
 
 type VerbCategory = "all" | "hebben" | "zijn" | "hebben/zijn";
 type VerbMode = "short" | "long";
 
 const LS_KEY = 'verbs-game-setup';
 
+// Create a store for verb game setup
+const gameSetupStore = createLocalStorageStore('verbs-game-setup', {
+  category: "all" as VerbCategory,
+  mode: "short" as VerbMode
+});
+
 const loadSetup = (): { category: VerbCategory; mode: VerbMode } => {
-  const defaultSetup = { category: "all" as VerbCategory, mode: "short" as VerbMode };
-  try {
-    const saved = localStorage.getItem(LS_KEY);
-    if (saved) {
-      const parsed = JSON.parse(saved);
-      const category: VerbCategory = ["all", "hebben", "zijn", "hebben/zijn"].includes(parsed?.category)
-        ? parsed.category
-        : defaultSetup.category;
-      const mode: VerbMode = ["short", "long"].includes(parsed?.mode) ? parsed.mode : defaultSetup.mode;
-      return { category, mode };
-    }
-  } catch {
-    // ignore
-  }
-  return defaultSetup;
+  const saved = gameSetupStore.get();
+
+  // Validate the loaded data to ensure it has valid category and mode
+  const category: VerbCategory = ["all", "hebben", "zijn", "hebben/zijn"].includes(saved?.category)
+    ? saved.category
+    : "all";
+  const mode: VerbMode = ["short", "long"].includes(saved?.mode) ? saved.mode : "short";
+
+  return { category, mode };
 };
 
 const saveSetup = (setup: { category: VerbCategory; mode: VerbMode }) => {
-  try {
-    localStorage.setItem(LS_KEY, JSON.stringify(setup));
-  } catch {
-    // ignore
-  }
+  gameSetupStore.set(setup);
 };
 
 const VerbsSetup = () => {

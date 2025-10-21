@@ -7,6 +7,7 @@ import { ArrowLeft, RotateCcw } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { speakerService } from "@/services/speaker";
 import { ReactNode } from "react";
+import { createLocalStorageStore } from "@/lib/localStorage";
 
 // Convert VocabularyWord to generic CardContent format
 const createVocabularyCardContent = (word: VocabularyWord): CardContent => ({
@@ -78,11 +79,14 @@ interface VocabularyWordWithChapter extends VocabularyWord {
   chapterTitle: string;
 }
 
-// Custom hook for managing favorites (shared with Vocabulary page)
+// Create a store for vocabulary favorites
+const favoritesStore = createLocalStorageStore<string[]>('vocabulary-favorites', []);
+
+// Custom hook for managing favorites (shared with Vocabulary page) with robust localStorage handling
 const useFavorites = () => {
   const [favorites, setFavorites] = useState<Set<string>>(() => {
-    const stored = localStorage.getItem('vocabulary-favorites');
-    return stored ? new Set(JSON.parse(stored)) : new Set();
+    const stored = favoritesStore.get();
+    return new Set(stored);
   });
 
   const isFavorite = useCallback((wordId: string) => favorites.has(wordId), [favorites]);
@@ -101,19 +105,17 @@ interface VocabResult {
   correct: boolean;
 }
 
+// Create stores for vocabulary flashcard settings
+const selectedChaptersStore = createLocalStorageStore<number[]>('vocab-selected-chapters', []);
+const includeFavoritesStore = createLocalStorageStore<boolean>('vocab-include-favorites', false);
+
 const VocabularyFlashcards = () => {
   const navigate = useNavigate();
   const [selectedChapters, setSelectedChapters] = useState<number[]>(() => {
-    const stored = localStorage.getItem('vocab-selected-chapters');
-    try {
-      return stored ? JSON.parse(stored) : [];
-    } catch {
-      return [];
-    }
+    return selectedChaptersStore.get();
   });
   const [includeFavorites, setIncludeFavorites] = useState<boolean>(() => {
-    const stored = localStorage.getItem('vocab-include-favorites');
-    return stored === 'true';
+    return includeFavoritesStore.get();
   });
   const [gameStarted, setGameStarted] = useState(false);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -207,7 +209,7 @@ const VocabularyFlashcards = () => {
       const next = prev.includes(chapter)
         ? prev.filter((c) => c !== chapter)
         : [...prev, chapter];
-      localStorage.setItem('vocab-selected-chapters', JSON.stringify(next));
+      selectedChaptersStore.set(next);
       return next;
     });
   };
@@ -215,7 +217,7 @@ const VocabularyFlashcards = () => {
   const handleFavoritesToggle = () => {
     setIncludeFavorites((prev) => {
       const next = !prev;
-      localStorage.setItem('vocab-include-favorites', String(next));
+      includeFavoritesStore.set(next);
       return next;
     });
   };

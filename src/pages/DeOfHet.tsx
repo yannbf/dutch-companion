@@ -7,6 +7,7 @@ import { motion, useMotionValue, useTransform } from "framer-motion";
 import { ProgressIndicator } from "@/components/ProgressIndicator";
 import { SummaryScreen } from "@/components/SummaryScreen";
 import { hapticService } from "@/services/haptic";
+import { createLocalStorageStore } from "@/lib/localStorage";
 
 interface WordResult {
   word: VocabularyWord;
@@ -19,12 +20,19 @@ const DeOfHet = () => {
   const [results, setResults] = useState<WordResult[]>([]);
   const [showSummary, setShowSummary] = useState(false);
 
+// Create stores for localStorage data
+const deOfHetStore = createLocalStorageStore<string[]>("deofhet-chapters", ["all"]);
+const globalSettingsStore = createLocalStorageStore("taal-boost-global-settings", {
+  showTranslation: true,
+  randomMode: false,
+  voiceMode: true,
+});
+
   const words = useMemo(() => {
-    const savedChapters = localStorage.getItem("deofhet-chapters");
-    const selectedChapters = savedChapters ? JSON.parse(savedChapters) : ["all"];
-    
+    const selectedChapters = deOfHetStore.get();
+
     let filteredWords: VocabularyWord[] = [];
-    
+
     if (selectedChapters.includes("all")) {
       filteredWords = vocabularyData.flatMap(chapter => chapter.words);
     } else {
@@ -32,18 +40,19 @@ const DeOfHet = () => {
         .filter(chapter => selectedChapters.includes(chapter.id))
         .flatMap(chapter => chapter.words);
     }
-    
+
     // Only include words with de/het articles
-    const articledWords = filteredWords.filter(word => 
+    const articledWords = filteredWords.filter(word =>
       word.article && (word.article === 'de' || word.article === 'het')
     );
-    
+
     // Shuffle
-    const randomOrder = localStorage.getItem("global-randomOrder") === "true";
+    const globalSettings = globalSettingsStore.get();
+    const randomOrder = globalSettings.randomMode;
     if (randomOrder) {
       return articledWords.sort(() => Math.random() - 0.5);
     }
-    
+
     return articledWords;
   }, []);
 

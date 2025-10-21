@@ -3,38 +3,27 @@ import { Languages, Shuffle, Volume2 } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { createLocalStorageStore } from "@/lib/localStorage";
 
-// Load global settings from localStorage
+// Create a store for global settings
+const globalSettingsStore = createLocalStorageStore('taal-boost-global-settings', {
+  showTranslation: true,
+  randomMode: false,
+  voiceMode: true,
+});
+
+// Load global settings from localStorage using the robust utility
 const loadGlobalSettings = () => {
-  const defaultSettings = {
-    showTranslation: true,
-    randomMode: false,
-    voiceMode: true,
-  };
-
-  try {
-    const saved = localStorage.getItem('taal-boost-global-settings');
-    if (saved) {
-      return { ...defaultSettings, ...JSON.parse(saved) };
-    }
-  } catch (error) {
-    console.warn('Failed to load settings from localStorage:', error);
-  }
-  
-  return defaultSettings;
+  return globalSettingsStore.get();
 };
 
-// Save global settings to localStorage
+// Save global settings to localStorage using the robust utility
 const saveGlobalSettings = (settings: {
   showTranslation: boolean;
   randomMode: boolean;
   voiceMode: boolean;
 }) => {
-  try {
-    localStorage.setItem('taal-boost-global-settings', JSON.stringify(settings));
-  } catch (error) {
-    console.warn('Failed to save settings to localStorage:', error);
-  }
+  globalSettingsStore.set(settings);
 };
 
 const Settings = () => {

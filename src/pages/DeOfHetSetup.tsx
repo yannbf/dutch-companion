@@ -7,10 +7,16 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useState } from "react";
 import { vocabularyData } from "@/data/vocabulary";
+import { createLocalStorageStore } from "@/lib/localStorage";
+
+// Create a store for deofhet chapters
+const deOfHetStore = createLocalStorageStore<string[]>("deofhet-chapters", ["all"]);
 
 const DeOfHetSetup = () => {
   const navigate = useNavigate();
-  const [selectedChapters, setSelectedChapters] = useState<string[]>(["all"]);
+  const [selectedChapters, setSelectedChapters] = useState<string[]>(() => {
+    return deOfHetStore.get();
+  });
 
   const handleChapterToggle = (chapterId: string) => {
     if (chapterId === "all") {
@@ -27,7 +33,7 @@ const DeOfHetSetup = () => {
   };
 
   const handleStart = () => {
-    localStorage.setItem("deofhet-chapters", JSON.stringify(selectedChapters));
+    deOfHetStore.set(selectedChapters);
     navigate("/exercises/deofhet/play");
   };
 

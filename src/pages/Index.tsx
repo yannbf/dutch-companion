@@ -7,49 +7,33 @@ import { ProgressIndicator } from "@/components/ProgressIndicator";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
 import { speakerService } from "@/services/speaker";
+import { createLocalStorageStore } from "@/lib/localStorage";
 
 interface VerbResult {
   verb: VerbCard;
   correct: boolean;
 }
 
-// Load global settings from localStorage
-const loadGlobalSettings = () => {
-  const defaultSettings = {
-    showTranslation: true,
-    randomMode: false,
-    voiceMode: true,
-  };
+// Create stores for different localStorage keys
+const globalSettingsStore = createLocalStorageStore('taal-boost-global-settings', {
+  showTranslation: true,
+  randomMode: false,
+  voiceMode: true,
+});
 
-  try {
-    const saved = localStorage.getItem('taal-boost-global-settings');
-    if (saved) {
-      return { ...defaultSettings, ...JSON.parse(saved) };
-    }
-  } catch (error) {
-    console.warn('Failed to load settings from localStorage:', error);
-  }
-  
-  return defaultSettings;
+const gameSetupStore = createLocalStorageStore('verbs-game-setup', {
+  category: "all" as "all" | "hebben" | "zijn" | "hebben/zijn",
+  mode: "short" as "short" | "long",
+});
+
+// Load global settings from localStorage using the robust utility
+const loadGlobalSettings = () => {
+  return globalSettingsStore.get();
 };
 
-// Load game setup from localStorage
+// Load game setup from localStorage using the robust utility
 const loadGameSetup = () => {
-  const defaultSetup = {
-    category: "all" as "all" | "hebben" | "zijn" | "hebben/zijn",
-    mode: "short" as "short" | "long",
-  };
-
-  try {
-    const saved = localStorage.getItem('verbs-game-setup');
-    if (saved) {
-      return { ...defaultSetup, ...JSON.parse(saved) };
-    }
-  } catch (error) {
-    console.warn('Failed to load game setup from localStorage:', error);
-  }
-  
-  return defaultSetup;
+  return gameSetupStore.get();
 };
 
 const Index = () => {

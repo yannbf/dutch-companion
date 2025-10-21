@@ -8,6 +8,7 @@ import { Volume2, Search, Heart, Filter } from "lucide-react";
 import { speakerService } from "@/services/speaker";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { createLocalStorageStore } from "@/lib/localStorage";
 
 // Extended word interface for favorites with chapter info
 interface VocabularyWordWithChapter extends VocabularyWord {
@@ -53,11 +54,14 @@ const getCategoryTheme = (word: VocabularyWord) => {
   }
 };
 
-// Custom hook for managing favorites
+// Create a store for vocabulary favorites
+const favoritesStore = createLocalStorageStore<string[]>('vocabulary-favorites', []);
+
+// Custom hook for managing favorites with robust localStorage handling
 const useFavorites = () => {
   const [favorites, setFavorites] = useState<Set<string>>(() => {
-    const stored = localStorage.getItem('vocabulary-favorites');
-    return stored ? new Set(JSON.parse(stored)) : new Set();
+    const stored = favoritesStore.get();
+    return new Set(stored);
   });
 
   const toggleFavorite = useCallback((wordId: string) => {
@@ -68,7 +72,7 @@ const useFavorites = () => {
       newFavorites.add(wordId);
     }
     setFavorites(newFavorites);
-    localStorage.setItem('vocabulary-favorites', JSON.stringify([...newFavorites]));
+    favoritesStore.set([...newFavorites]);
   }, [favorites]);
 
   const isFavorite = useCallback((wordId: string) => favorites.has(wordId), [favorites]);
