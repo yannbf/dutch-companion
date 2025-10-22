@@ -1,9 +1,10 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, Fragment } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { separableVerbs, SeparableVerbExercise } from "@/data/separableVerbs";
-import { motion } from "framer-motion";
+import { motion, Reorder, AnimatePresence } from "framer-motion";
+import type { PanInfo } from "framer-motion";
 import { Volume2, Check, X } from "lucide-react";
 import { speakerService } from "@/services/speaker";
 import { hapticService } from "@/services/haptic";
@@ -11,24 +12,27 @@ import { exerciseStats } from "@/lib/exerciseStats";
 
 const TOTAL_ROUNDS = 10;
 
+type WordItem = { id: string; text: string };
+
 const SeparableVerbs = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [currentRound, setCurrentRound] = useState(0);
   const [exercises, setExercises] = useState<SeparableVerbExercise[]>([]);
   const [currentExercise, setCurrentExercise] = useState<SeparableVerbExercise | null>(null);
-  const [userAnswer, setUserAnswer] = useState<string[]>([]);
-  const [availableWords, setAvailableWords] = useState<string[]>([]);
+  const [userAnswer, setUserAnswer] = useState<WordItem[]>([]);
+  const [availableWords, setAvailableWords] = useState<WordItem[]>([]);
   const [isCorrect, setIsCorrect] = useState<boolean | null>(null);
   const [score, setScore] = useState(0);
   const [showResults, setShowResults] = useState(false);
-  const [draggingWord, setDraggingWord] = useState<string | null>(null);
-  const [insertionIndex, setInsertionIndex] = useState<number | null>(null);
   const answerAreaRef = useRef<HTMLDivElement>(null);
   const [wrongStreak, setWrongStreak] = useState(0);
   const [shakeTrigger, setShakeTrigger] = useState(0);
-  const [draggingIndex, setDraggingIndex] = useState<number | null>(null);
-  const [draggingSource, setDraggingSource] = useState<"available" | "answer" | null>(null);
+  const [draggingItem, setDraggingItem] = useState<WordItem | null>(null);
+  const [insertionIndex, setInsertionIndex] = useState<number | null>(null);
+  const [draggingFrom, setDraggingFrom] = useState<"available" | "answer" | null>(null);
+  const [dragCursor, setDragCursor] = useState<{ x: number; y: number } | null>(null);
+  const suppressClickRef = useRef(false);
 
   useEffect(() => {
     const difficultiesParam = searchParams.get("difficulties") || "easy,medium,hard";
@@ -49,54 +53,32 @@ const SeparableVerbs = () => {
 
   const initializeRound = (exercise: SeparableVerbExercise) => {
     setCurrentExercise(exercise);
-    const shuffled = [...exercise.sentence].sort(() => Math.random() - 0.5);
+    const items: WordItem[] = exercise.sentence.map((word, i) => ({
+      id: `${word}-${i}-${Math.random().toString(36).slice(2, 8)}`,
+      text: word,
+    }));
+    const shuffled = [...items].sort(() => Math.random() - 0.5);
     setAvailableWords(shuffled);
     setUserAnswer([]);
     setIsCorrect(null);
-    setDraggingWord(null);
-    setInsertionIndex(null);
     setWrongStreak(0);
-    setDraggingIndex(null);
-    setDraggingSource(null);
   };
 
-  const handleWordClick = (word: string, fromAvailable: boolean, index?: number) => {
+  const handleWordClick = (item: WordItem, from: "available" | "answer") => {
     hapticService.light();
-    
-    if (fromAvailable) {
-      setUserAnswer([...userAnswer, word]);
-      // Remove only the specific occurrence from available words
-      if (index !== undefined) {
-        const nextAvailable = [...availableWords];
-        nextAvailable.splice(index, 1);
-        setAvailableWords(nextAvailable);
-      } else {
-        const firstIdx = availableWords.indexOf(word);
-        if (firstIdx > -1) {
-          const nextAvailable = [...availableWords];
-          nextAvailable.splice(firstIdx, 1);
-          setAvailableWords(nextAvailable);
-        }
-      }
+    if (from === "available") {
+      setAvailableWords((w) => w.filter((x) => x.id !== item.id));
+      setUserAnswer((a) => [...a, item]);
     } else {
-      // Remove only the clicked occurrence from the answer
-      if (index !== undefined) {
-        setUserAnswer(userAnswer.filter((_, i) => i !== index));
-        setAvailableWords([...availableWords, word]);
-      } else {
-        const firstIdx = userAnswer.indexOf(word);
-        if (firstIdx > -1) {
-          setUserAnswer(userAnswer.filter((_, i) => i !== firstIdx));
-          setAvailableWords([...availableWords, word]);
-        }
-      }
+      setUserAnswer((a) => a.filter((x) => x.id !== item.id));
+      setAvailableWords((w) => [...w, item]);
     }
   };
 
   const handleCheck = () => {
     if (!currentExercise || userAnswer.length !== currentExercise.sentence.length) return;
-    
-    const correct = userAnswer.join(" ") === currentExercise.sentence.join(" ");
+
+    const correct = userAnswer.map((i) => i.text).join(" ") === currentExercise.sentence.join(" ");
     setIsCorrect(correct);
     
     if (correct) {
@@ -124,13 +106,17 @@ const SeparableVerbs = () => {
   const handleReset = () => {
     if (currentExercise) {
       setUserAnswer([]);
-      setAvailableWords([...currentExercise.sentence].sort(() => Math.random() - 0.5));
+      const items: WordItem[] = currentExercise.sentence.map((word, i) => ({
+        id: `${word}-${i}-${Math.random().toString(36).slice(2, 8)}`,
+        text: word,
+      }));
+      setAvailableWords([...items].sort(() => Math.random() - 0.5));
       setIsCorrect(null);
       setWrongStreak(0);
-      setDraggingWord(null);
+      setDraggingItem(null);
       setInsertionIndex(null);
-      setDraggingIndex(null);
-      setDraggingSource(null);
+      setDraggingFrom(null);
+      setDragCursor(null);
     }
   };
 
@@ -185,13 +171,57 @@ const SeparableVerbs = () => {
     );
   }
 
-  // Compute insertion index based on the pointer position relative to existing answer words
+  const handleDragEnd = (
+    _event: MouseEvent | TouchEvent | PointerEvent,
+    info: PanInfo,
+    item: WordItem,
+    source: "available" | "answer"
+  ) => {
+    const area = answerAreaRef.current?.getBoundingClientRect();
+    const inside = !!(
+      area &&
+      info.point.x >= area.left &&
+      info.point.x <= area.right &&
+      info.point.y >= area.top &&
+      info.point.y <= area.bottom
+    );
+    if (inside && source === "available") {
+      setAvailableWords((w) => w.filter((x) => x.id !== item.id));
+      setUserAnswer((a) => {
+        const idx = insertionIndex ?? a.length;
+        return [...a.slice(0, idx), item, ...a.slice(idx)];
+      });
+      hapticService.light();
+    } else if (!inside && source === "answer") {
+      setUserAnswer((a) => a.filter((x) => x.id !== item.id));
+      setAvailableWords((w) => [...w, item]);
+      hapticService.light();
+    } else if (inside && source === "answer") {
+      // Reorder within answer using the placeholder index
+      setUserAnswer((a) => {
+        const fromIdx = a.findIndex((x) => x.id === item.id);
+        if (fromIdx === -1) return a;
+        const toIdxRaw = insertionIndex ?? fromIdx;
+        const toIdx = Math.max(0, Math.min(toIdxRaw, a.length));
+        if (toIdx === fromIdx || toIdx === fromIdx + 1) return a; // no-op
+        const without = a.filter((_, i) => i !== fromIdx);
+        const adjusted = toIdx > fromIdx ? toIdx - 1 : toIdx;
+        return [...without.slice(0, adjusted), item, ...without.slice(adjusted)];
+      });
+      hapticService.light();
+    }
+    setDraggingItem(null);
+    setInsertionIndex(null);
+    setDraggingFrom(null);
+    setDragCursor(null);
+  };
+
+  // Compute insertion index for external drags (available -> answer)
   const computeInsertionIndex = (pointX: number, pointY: number): number => {
     if (!answerAreaRef.current) return userAnswer.length;
     const wordNodes = answerAreaRef.current.querySelectorAll('[data-answer-word="true"]');
     const rects = Array.from(wordNodes).map((el) => (el as HTMLElement).getBoundingClientRect());
     if (rects.length === 0) return 0;
-    // Find nearest word center to the pointer
     let nearestIndex = 0;
     let nearestDist = Number.POSITIVE_INFINITY;
     for (let i = 0; i < rects.length; i++) {
@@ -209,44 +239,6 @@ const SeparableVerbs = () => {
     const nearestRect = rects[nearestIndex];
     const nearestCenterX = nearestRect.left + nearestRect.width / 2;
     return pointX < nearestCenterX ? nearestIndex : nearestIndex + 1;
-  };
-
-  const insertWordAtIndex = (word: string, index: number) => {
-    const clampedIndex = Math.max(0, Math.min(index, userAnswer.length));
-    const nextAnswer = [...userAnswer.slice(0, clampedIndex), word, ...userAnswer.slice(clampedIndex)];
-    setUserAnswer(nextAnswer);
-    // Remove only the dragged occurrence from available words when source is available
-    if (draggingSource === "available") {
-      if (draggingIndex !== null) {
-        const nextAvailable = [...availableWords];
-        nextAvailable.splice(draggingIndex, 1);
-        setAvailableWords(nextAvailable);
-      } else {
-        const firstIdx = availableWords.indexOf(word);
-        if (firstIdx > -1) {
-          const nextAvailable = [...availableWords];
-          nextAvailable.splice(firstIdx, 1);
-          setAvailableWords(nextAvailable);
-        }
-      }
-    }
-    setDraggingWord(null);
-    setInsertionIndex(null);
-    setDraggingIndex(null);
-    setDraggingSource(null);
-  };
-
-  const reorderAnswerAtIndex = (originalIndex: number, targetIndex: number) => {
-    const clampedTarget = Math.max(0, Math.min(targetIndex, userAnswer.length));
-    const item = userAnswer[originalIndex];
-    const without = userAnswer.filter((_, i) => i !== originalIndex);
-    const adjustedTarget = clampedTarget > originalIndex ? clampedTarget - 1 : clampedTarget;
-    const next = [
-      ...without.slice(0, adjustedTarget),
-      item,
-      ...without.slice(adjustedTarget)
-    ];
-    setUserAnswer(next);
   };
 
   return (
@@ -305,39 +297,29 @@ const SeparableVerbs = () => {
                 Tap or drag words below to build your sentence
               </p>
             ) : (
-              <div className="flex flex-wrap gap-2">
-                {userAnswer.map((word, index) => (
-                  <>
-                    {draggingWord && insertionIndex === index && (
-                      <div
-                        key={`placeholder-${index}`}
-                        className="px-4 py-2 rounded-lg font-medium border-2 border-primary bg-primary/10 text-transparent select-none"
-                      >
-                        {draggingWord}
-                      </div>
-                    )}
-                    <motion.div
-                      key={`answer-${word}-${index}`}
-                      data-answer-word="true"
+              <Reorder.Group axis="x" values={userAnswer} onReorder={setUserAnswer} className="flex flex-wrap gap-2">
+                <AnimatePresence>
+                  {userAnswer.map((item, index) => (
+                    <Fragment key={`wrap-${item.id}`}>
+                      {draggingItem && insertionIndex === index && (
+                        <div
+                          key={`placeholder-${index}`}
+                          className="px-4 py-2 rounded-lg font-medium border-2 border-primary bg-primary/10 text-transparent select-none"
+                        >
+                          {draggingItem.text}
+                        </div>
+                      )}
+                    <Reorder.Item
+                      key={item.id}
+                      value={item}
                       drag
-                      dragSnapToOrigin
-                      whileDrag={{
-                        scale: 1.15,
-                        zIndex: 100,
-                        boxShadow: "0 15px 40px rgba(0,0,0,0.25)",
-                        rotate: 3,
-                        cursor: "grabbing"
+                      onDragStart={(e, info) => {
+                        setDraggingItem(item);
+                        setDraggingFrom("answer");
+                        setDragCursor({ x: info.point.x, y: info.point.y });
+                        suppressClickRef.current = true;
                       }}
-                      dragTransition={{
-                        bounceStiffness: 600,
-                        bounceDamping: 25
-                      }}
-                      onDragStart={() => {
-                        setDraggingWord(word);
-                        setDraggingIndex(index);
-                        setDraggingSource("answer");
-                      }}
-                      onDrag={(event, info) => {
+                      onDrag={(e, info) => {
                         const area = answerAreaRef.current?.getBoundingClientRect();
                         if (!area) return;
                         const inside =
@@ -351,54 +333,52 @@ const SeparableVerbs = () => {
                         } else {
                           setInsertionIndex(null);
                         }
+                        setDragCursor({ x: info.point.x, y: info.point.y });
                       }}
-                      onDragEnd={(event, info) => {
-                        const area = answerAreaRef.current?.getBoundingClientRect();
-                        const inside = !!(
-                          area &&
-                          info.point.x >= area.left &&
-                          info.point.x <= area.right &&
-                          info.point.y >= area.top &&
-                          info.point.y <= area.bottom
-                        );
-                        if (inside) {
-                          const target = insertionIndex ?? computeInsertionIndex(info.point.x, info.point.y);
-                          if (draggingIndex !== null) {
-                            reorderAnswerAtIndex(draggingIndex, target);
-                          }
-                        } else {
-                          // Dragged out: remove from answer and return to available
-                          if (draggingIndex !== null) {
-                            const removed = userAnswer[draggingIndex];
-                            const nextAnswer = userAnswer.filter((_, i) => i !== draggingIndex);
-                            setUserAnswer(nextAnswer);
-                            setAvailableWords([...availableWords, removed]);
-                          }
-                        }
-                        setDraggingWord(null);
+                      onDragEnd={(e, info) => {
+                        handleDragEnd(e, info, item, "answer");
+                        setDraggingItem(null);
                         setInsertionIndex(null);
-                        setDraggingIndex(null);
-                        setDraggingSource(null);
+                        setDraggingFrom(null);
+                        setDragCursor(null);
                       }}
-                      whileTap={{ scale: 0.95 }}
-                      whileHover={{ scale: 1.05, borderColor: "hsl(var(--primary))" }}
-                      transition={{ duration: 0.15 }}
-                      className={`bg-primary text-primary-foreground px-4 py-2 rounded-lg font-medium cursor-grab active:cursor-grabbing touch-manipulation select-none`}
-                      onClick={() => handleWordClick(word, false, index)}
+                      whileDrag={{ scale: 1.1, zIndex: 10, boxShadow: "0 10px 30px rgba(0,0,0,0.2)" }}
+                      transition={{ type: "spring", stiffness: 400, damping: 25 }}
+                      exit={{ opacity: 0, scale: 0.9, transition: { duration: 0.12 } }}
+                      initial={{ opacity: 0.9, scale: 0.98 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      style={
+                        draggingFrom === "answer" && draggingItem?.id === item.id && dragCursor
+                          ? { position: "fixed", left: dragCursor.x, top: dragCursor.y, transform: "translate(-50%, -50%)", pointerEvents: "none" }
+                          : undefined
+                      }
                     >
-                      {word}
-                    </motion.div>
-                  </>
-                ))}
-                {draggingWord && insertionIndex === userAnswer.length && (
-                  <div
-                    key={`placeholder-end`}
-                    className="px-4 py-2 rounded-lg font-medium border-2 border-primary bg-primary/10 text-transparent select-none"
-                  >
-                    {draggingWord}
-                  </div>
-                )}
-              </div>
+                      <div
+                        data-answer-word={draggingItem?.id === item.id ? "dragging" : "true"}
+                        className={"bg-primary text-primary-foreground px-4 py-2 rounded-lg font-medium cursor-grab select-none"}
+                        onClick={() => {
+                          if (suppressClickRef.current) {
+                            suppressClickRef.current = false;
+                            return;
+                          }
+                          handleWordClick(item, "answer");
+                        }}
+                      >
+                        {item.text}
+                      </div>
+                    </Reorder.Item>
+                    </Fragment>
+                  ))}
+                  {draggingItem && insertionIndex === userAnswer.length && (
+                    <div
+                      key={`placeholder-end`}
+                      className="px-4 py-2 rounded-lg font-medium border-2 border-primary bg-primary/10 text-transparent select-none"
+                    >
+                      {draggingItem.text}
+                    </div>
+                  )}
+                </AnimatePresence>
+              </Reorder.Group>
             )}
           </motion.div>
 
@@ -433,26 +413,16 @@ const SeparableVerbs = () => {
               Available words:
             </p>
             <div className="flex flex-wrap gap-2">
-              {availableWords.map((word, index) => (
+                {availableWords.map((item) => (
                 <motion.div
-                  key={`available-${word}-${index}`}
+                  key={item.id}
                   drag
-                  dragSnapToOrigin
-                  whileDrag={{
-                    scale: 1.15,
-                    zIndex: 100,
-                    boxShadow: "0 15px 40px rgba(0,0,0,0.25)",
-                    rotate: 3,
-                    cursor: "grabbing"
-                  }}
-                  dragTransition={{
-                    bounceStiffness: 600,
-                    bounceDamping: 25
-                  }}
+                    whileDrag={{ scale: 1.1, zIndex: 10, boxShadow: "0 10px 30px rgba(0,0,0,0.2)" }}
+                    transition={{ type: "spring", stiffness: 400, damping: 25 }}
                   onDragStart={() => {
-                    setDraggingWord(word);
-                    setDraggingIndex(index);
-                    setDraggingSource("available");
+                    setDraggingItem(item);
+                    setDraggingFrom("available");
+                    suppressClickRef.current = true;
                   }}
                   onDrag={(event, info) => {
                     const area = answerAreaRef.current?.getBoundingClientRect();
@@ -471,22 +441,30 @@ const SeparableVerbs = () => {
                   }}
                   onDragEnd={(event, info) => {
                     const area = answerAreaRef.current?.getBoundingClientRect();
-                    if (area && info.point.x >= area.left && info.point.x <= area.right && info.point.y >= area.top && info.point.y <= area.bottom) {
-                      const idx = insertionIndex ?? computeInsertionIndex(info.point.x, info.point.y);
-                      insertWordAtIndex(word, idx);
+                    const inside = !!(
+                      area &&
+                      info.point.x >= area.left &&
+                      info.point.x <= area.right &&
+                      info.point.y >= area.top &&
+                      info.point.y <= area.bottom
+                    );
+                    handleDragEnd(event, info, item, "available");
+                    if (!inside) {
+                      // Snap back: rely on dragSnapToOrigin by setting it and letting motion animate back
+                      // Alternatively force re-render to reset any transforms
                     }
-                    setDraggingWord(null);
-                    setInsertionIndex(null);
-                    setDraggingIndex(null);
-                    setDraggingSource(null);
+                    suppressClickRef.current = false;
                   }}
-                  whileTap={{ scale: 0.95 }}
-                  whileHover={{ scale: 1.05, borderColor: "hsl(var(--primary))" }}
-                  transition={{ duration: 0.15 }}
-                  className="bg-card border-2 border-border px-4 py-2 rounded-lg font-medium cursor-grab active:cursor-grabbing hover:border-primary/50 touch-manipulation select-none"
-                  onClick={() => handleWordClick(word, true, index)}
+                  className="bg-card border-2 border-border px-4 py-2 rounded-lg font-medium cursor-grab select-none hover:border-primary/50"
+                  onClick={() => {
+                    if (suppressClickRef.current) {
+                      suppressClickRef.current = false;
+                      return;
+                    }
+                    handleWordClick(item, "available");
+                  }}
                 >
-                  {word}
+                  {item.text}
                 </motion.div>
               ))}
             </div>
@@ -513,6 +491,8 @@ const SeparableVerbs = () => {
             </Button>
           </div>
         </Card>
+
+        
 
         <div className="text-center text-sm text-muted-foreground">
           <p>Separable verb: <span className="font-semibold">{currentExercise.verb}</span></p>
