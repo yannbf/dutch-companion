@@ -246,25 +246,31 @@ const SeparableVerbs = () => {
             <p className="text-sm font-medium text-muted-foreground">
               Available words:
             </p>
-            <div className="flex flex-wrap gap-2">
+            <Reorder.Group
+              axis="x"
+              values={availableWords}
+              onReorder={setAvailableWords}
+              className="flex flex-wrap gap-2"
+            >
               {availableWords.map((word, index) => (
-                <motion.div
-                  key={`${word}-${index}`}
-                  whileTap={{ scale: 0.95 }}
-                  className="bg-card border-2 border-border px-4 py-2 rounded-lg font-medium cursor-pointer hover:border-primary/50 transition-colors touch-manipulation"
-                  onClick={() => handleWordClick(word, true)}
-                >
-                  {word}
-                </motion.div>
+                <Reorder.Item key={`${word}-${index}`} value={word}>
+                  <motion.div
+                    whileTap={{ scale: 0.95 }}
+                    className="bg-card border-2 border-border px-4 py-2 rounded-lg font-medium cursor-pointer hover:border-primary/50 transition-colors touch-manipulation"
+                    onClick={() => handleWordClick(word, true)}
+                  >
+                    {word}
+                  </motion.div>
+                </Reorder.Item>
               ))}
-            </div>
+            </Reorder.Group>
           </div>
 
           {/* Action buttons */}
           <div className="flex gap-3 pt-4">
             <Button
               onClick={handleCheck}
-              disabled={userAnswer.length !== currentExercise.sentence.length || isCorrect !== null}
+              disabled={userAnswer.length !== currentExercise.sentence.length || isCorrect === true}
               className="flex-1"
               size="lg"
             >
@@ -273,7 +279,7 @@ const SeparableVerbs = () => {
             <Button
               onClick={handleReset}
               variant="outline"
-              disabled={userAnswer.length === 0 || isCorrect !== null}
+              disabled={userAnswer.length === 0 || isCorrect === true}
               className="flex-1"
               size="lg"
             >
