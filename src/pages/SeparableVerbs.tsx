@@ -27,6 +27,7 @@ const SeparableVerbs = () => {
   const answerAreaRef = useRef<HTMLDivElement>(null);
   const [wrongStreak, setWrongStreak] = useState(0);
   const [shakeTrigger, setShakeTrigger] = useState(0);
+  const [draggingIndex, setDraggingIndex] = useState<number | null>(null);
 
   useEffect(() => {
     const difficultiesParam = searchParams.get("difficulties") || "easy,medium,hard";
@@ -54,19 +55,38 @@ const SeparableVerbs = () => {
     setDraggingWord(null);
     setInsertionIndex(null);
     setWrongStreak(0);
+    setDraggingIndex(null);
   };
 
-  const handleWordClick = (word: string, fromAvailable: boolean) => {
+  const handleWordClick = (word: string, fromAvailable: boolean, index?: number) => {
     hapticService.light();
     
     if (fromAvailable) {
       setUserAnswer([...userAnswer, word]);
-      setAvailableWords(availableWords.filter(w => w !== word));
+      // Remove only the specific occurrence from available words
+      if (index !== undefined) {
+        const nextAvailable = [...availableWords];
+        nextAvailable.splice(index, 1);
+        setAvailableWords(nextAvailable);
+      } else {
+        const firstIdx = availableWords.indexOf(word);
+        if (firstIdx > -1) {
+          const nextAvailable = [...availableWords];
+          nextAvailable.splice(firstIdx, 1);
+          setAvailableWords(nextAvailable);
+        }
+      }
     } else {
-      const index = userAnswer.indexOf(word);
-      if (index > -1) {
+      // Remove only the clicked occurrence from the answer
+      if (index !== undefined) {
         setUserAnswer(userAnswer.filter((_, i) => i !== index));
         setAvailableWords([...availableWords, word]);
+      } else {
+        const firstIdx = userAnswer.indexOf(word);
+        if (firstIdx > -1) {
+          setUserAnswer(userAnswer.filter((_, i) => i !== firstIdx));
+          setAvailableWords([...availableWords, word]);
+        }
       }
     }
   };
@@ -188,13 +208,25 @@ const SeparableVerbs = () => {
   };
 
   const insertWordAtIndex = (word: string, index: number) => {
-    if (userAnswer.includes(word)) return; // already present, ignore
     const clampedIndex = Math.max(0, Math.min(index, userAnswer.length));
     const nextAnswer = [...userAnswer.slice(0, clampedIndex), word, ...userAnswer.slice(clampedIndex)];
     setUserAnswer(nextAnswer);
-    setAvailableWords(availableWords.filter((w) => w !== word));
+    // Remove only the dragged occurrence from available words
+    if (draggingIndex !== null) {
+      const nextAvailable = [...availableWords];
+      nextAvailable.splice(draggingIndex, 1);
+      setAvailableWords(nextAvailable);
+    } else {
+      const firstIdx = availableWords.indexOf(word);
+      if (firstIdx > -1) {
+        const nextAvailable = [...availableWords];
+        nextAvailable.splice(firstIdx, 1);
+        setAvailableWords(nextAvailable);
+      }
+    }
     setDraggingWord(null);
     setInsertionIndex(null);
+    setDraggingIndex(null);
   };
 
   return (
@@ -288,7 +320,7 @@ const SeparableVerbs = () => {
                         data-answer-word="true"
                         whileTap={{ scale: 0.95 }}
                         className="bg-primary text-primary-foreground px-4 py-2 rounded-lg font-medium cursor-grab active:cursor-grabbing touch-manipulation select-none"
-                        onClick={() => handleWordClick(word, false)}
+                        onClick={() => handleWordClick(word, false, index)}
                       >
                         {word}
                       </motion.div>
@@ -356,6 +388,7 @@ const SeparableVerbs = () => {
                   }}
                   onDragStart={() => {
                     setDraggingWord(word);
+                    setDraggingIndex(index);
                   }}
                   onDrag={(event, info) => {
                     const area = answerAreaRef.current?.getBoundingClientRect();
@@ -380,12 +413,13 @@ const SeparableVerbs = () => {
                     }
                     setDraggingWord(null);
                     setInsertionIndex(null);
+                    setDraggingIndex(null);
                   }}
                   whileTap={{ scale: 0.95 }}
                   whileHover={{ scale: 1.05, borderColor: "hsl(var(--primary))" }}
                   transition={{ duration: 0.15 }}
                   className="bg-card border-2 border-border px-4 py-2 rounded-lg font-medium cursor-grab active:cursor-grabbing hover:border-primary/50 touch-manipulation select-none"
-                  onClick={() => handleWordClick(word, true)}
+                  onClick={() => handleWordClick(word, true, index)}
                 >
                   {word}
                 </motion.div>
