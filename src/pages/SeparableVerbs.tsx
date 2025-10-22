@@ -3,7 +3,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { separableVerbs, SeparableVerbExercise } from "@/data/separableVerbs";
-import { motion, Reorder } from "framer-motion";
+import { motion, Reorder, useDragControls } from "framer-motion";
 import { Volume2, Check, X } from "lucide-react";
 import { speakerService } from "@/services/speaker";
 import { hapticService } from "@/services/haptic";
@@ -192,7 +192,7 @@ const SeparableVerbs = () => {
           <div className="min-h-[120px] border-2 border-dashed border-border rounded-lg p-4">
             {userAnswer.length === 0 ? (
               <p className="text-muted-foreground text-center">
-                Tap words below to build your sentence
+                Tap or drag words below to build your sentence
               </p>
             ) : (
               <Reorder.Group
@@ -202,10 +202,24 @@ const SeparableVerbs = () => {
                 className="flex flex-wrap gap-2"
               >
                 {userAnswer.map((word, index) => (
-                  <Reorder.Item key={`${word}-${index}`} value={word}>
+                  <Reorder.Item 
+                    key={`answer-${word}-${index}`} 
+                    value={word}
+                    whileDrag={{
+                      scale: 1.1,
+                      zIndex: 50,
+                      boxShadow: "0 10px 30px rgba(0,0,0,0.2)",
+                      cursor: "grabbing"
+                    }}
+                    dragTransition={{
+                      bounceStiffness: 600,
+                      bounceDamping: 20
+                    }}
+                    transition={{ duration: 0.2 }}
+                  >
                     <motion.div
                       whileTap={{ scale: 0.95 }}
-                      className="bg-primary text-primary-foreground px-4 py-2 rounded-lg font-medium cursor-pointer touch-manipulation"
+                      className="bg-primary text-primary-foreground px-4 py-2 rounded-lg font-medium cursor-grab active:cursor-grabbing touch-manipulation select-none"
                       onClick={() => handleWordClick(word, false)}
                     >
                       {word}
@@ -246,24 +260,36 @@ const SeparableVerbs = () => {
             <p className="text-sm font-medium text-muted-foreground">
               Available words:
             </p>
-            <Reorder.Group
-              axis="x"
-              values={availableWords}
-              onReorder={setAvailableWords}
-              className="flex flex-wrap gap-2"
-            >
+            <div className="flex flex-wrap gap-2">
               {availableWords.map((word, index) => (
-                <Reorder.Item key={`${word}-${index}`} value={word}>
-                  <motion.div
-                    whileTap={{ scale: 0.95 }}
-                    className="bg-card border-2 border-border px-4 py-2 rounded-lg font-medium cursor-pointer hover:border-primary/50 transition-colors touch-manipulation"
-                    onClick={() => handleWordClick(word, true)}
-                  >
-                    {word}
-                  </motion.div>
-                </Reorder.Item>
+                <motion.div
+                  key={`available-${word}-${index}`}
+                  drag
+                  dragSnapToOrigin
+                  whileDrag={{
+                    scale: 1.15,
+                    zIndex: 100,
+                    boxShadow: "0 15px 40px rgba(0,0,0,0.25)",
+                    rotate: 3,
+                    cursor: "grabbing"
+                  }}
+                  dragTransition={{
+                    bounceStiffness: 600,
+                    bounceDamping: 25
+                  }}
+                  onDragEnd={() => {
+                    handleWordClick(word, true);
+                  }}
+                  whileTap={{ scale: 0.95 }}
+                  whileHover={{ scale: 1.05, borderColor: "hsl(var(--primary))" }}
+                  transition={{ duration: 0.15 }}
+                  className="bg-card border-2 border-border px-4 py-2 rounded-lg font-medium cursor-grab active:cursor-grabbing hover:border-primary/50 touch-manipulation select-none"
+                  onClick={() => handleWordClick(word, true)}
+                >
+                  {word}
+                </motion.div>
               ))}
-            </Reorder.Group>
+            </div>
           </div>
 
           {/* Action buttons */}
