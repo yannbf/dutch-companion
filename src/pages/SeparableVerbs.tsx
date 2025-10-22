@@ -5,7 +5,7 @@ import { Card } from "@/components/ui/card";
 import { separableVerbs, SeparableVerbExercise } from "@/data/separableVerbs";
 import { motion, Reorder, AnimatePresence } from "framer-motion";
 import type { PanInfo } from "framer-motion";
-import { Volume2, Check, X } from "lucide-react";
+import { Volume2, Check, X, Keyboard } from "lucide-react";
 import { speakerService } from "@/services/speaker";
 import { hapticService } from "@/services/haptic";
 import { exerciseStats } from "@/lib/exerciseStats";
@@ -33,6 +33,9 @@ const SeparableVerbs = () => {
   const [draggingFrom, setDraggingFrom] = useState<"available" | "answer" | null>(null);
   const [dragCursor, setDragCursor] = useState<{ x: number; y: number } | null>(null);
   const suppressClickRef = useRef(false);
+  const [isKeyboardMode, setIsKeyboardMode] = useState(false);
+  const [typedAnswer, setTypedAnswer] = useState("");
+  const textareaRef = useRef<HTMLTextAreaElement | null>(null);
 
   useEffect(() => {
     const difficultiesParam = searchParams.get("difficulties") || "easy,medium,hard";
@@ -64,6 +67,13 @@ const SeparableVerbs = () => {
     setWrongStreak(0);
   };
 
+  useEffect(() => {
+    if (isKeyboardMode) {
+      // Auto-focus textarea when keyboard mode is enabled or round changes
+      requestAnimationFrame(() => textareaRef.current?.focus());
+    }
+  }, [isKeyboardMode, currentExercise]);
+
   const handleWordClick = (item: WordItem, from: "available" | "answer") => {
     hapticService.light();
     if (from === "available") {
@@ -75,10 +85,25 @@ const SeparableVerbs = () => {
     }
   };
 
-  const handleCheck = () => {
-    if (!currentExercise || userAnswer.length !== currentExercise.sentence.length) return;
+  const normalizeForCompare = (s: string) =>
+    s
+      .toLowerCase()
+      .replace(/[.,!?;:¿¡"“”'()[\]{}]/g, "")
+      .replace(/\s+/g, " ")
+      .trim();
 
-    const correct = userAnswer.map((i) => i.text).join(" ") === currentExercise.sentence.join(" ");
+  const handleCheck = () => {
+    if (!currentExercise) return;
+
+    const expected = currentExercise.sentence.join(" ");
+    const user = isKeyboardMode
+      ? typedAnswer
+      : userAnswer.map((i) => i.text).join(" ");
+    if (!isKeyboardMode && userAnswer.length !== currentExercise.sentence.length) return;
+
+    const correct = isKeyboardMode
+      ? normalizeForCompare(user) === normalizeForCompare(expected)
+      : user === expected;
     setIsCorrect(correct);
     
     if (correct) {
@@ -93,6 +118,7 @@ const SeparableVerbs = () => {
         } else {
           setCurrentRound(currentRound + 1);
           initializeRound(exercises[currentRound + 1]);
+          setTypedAnswer("");
         }
       }, 2000);
     } else {
@@ -117,6 +143,7 @@ const SeparableVerbs = () => {
       setInsertionIndex(null);
       setDraggingFrom(null);
       setDragCursor(null);
+      setTypedAnswer("");
     }
   };
 
@@ -272,14 +299,26 @@ const SeparableVerbs = () => {
                 {currentExercise.translation}
               </p>
             </div>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={handlePlayAudio}
-              className="shrink-0"
-            >
-              <Volume2 className="w-5 h-5" />
-            </Button>
+            <div className="flex items-center gap-1 shrink-0">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setIsKeyboardMode((v) => !v)}
+                className={`${isKeyboardMode ? "text-primary" : ""}`}
+                aria-pressed={isKeyboardMode}
+                aria-label="Toggle keyboard mode"
+              >
+                <Keyboard className="w-5 h-5" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={handlePlayAudio}
+                className="shrink-0"
+              >
+                <Volume2 className="w-5 h-5" />
+              </Button>
+            </div>
           </div>
 
           {/* User's answer area */}
@@ -292,7 +331,21 @@ const SeparableVerbs = () => {
               isCorrect === false && wrongStreak >= 2 ? "border-red-500/60" : "border-border"
             }`}
           >
-            {userAnswer.length === 0 ? (
+            {isKeyboardMode ? (
+              <textarea
+                ref={textareaRef}
+                value={typedAnswer}
+                onChange={(e) => setTypedAnswer(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !e.shiftKey) {
+                    e.preventDefault();
+                    handleCheck();
+                  }
+                }}
+                placeholder="Type the sentence here…"
+                className="w-full min-h-[88px] bg-background border rounded-md p-3 outline-none focus:ring-2 focus:ring-primary"
+              />
+            ) : userAnswer.length === 0 ? (
               <p className="text-muted-foreground text-center">
                 Tap or drag words below to build your sentence
               </p>
@@ -412,6 +465,7 @@ const SeparableVerbs = () => {
             <p className="text-sm font-medium text-muted-foreground">
               Available words:
             </p>
+            {!isKeyboardMode && (
             <div className="flex flex-wrap gap-2">
                 {availableWords.map((item) => (
                 <motion.div
@@ -468,13 +522,14 @@ const SeparableVerbs = () => {
                 </motion.div>
               ))}
             </div>
+            )}
           </div>
 
           {/* Action buttons */}
           <div className="flex gap-3 pt-4">
             <Button
               onClick={handleCheck}
-              disabled={userAnswer.length !== currentExercise.sentence.length || isCorrect === true}
+              disabled={(!isKeyboardMode && userAnswer.length !== currentExercise.sentence.length) || isCorrect === true}
               className="flex-1"
               size="lg"
             >
@@ -483,7 +538,7 @@ const SeparableVerbs = () => {
             <Button
               onClick={handleReset}
               variant="outline"
-              disabled={userAnswer.length === 0 || isCorrect === true}
+              disabled={(!isKeyboardMode && userAnswer.length === 0) || isCorrect === true}
               className="flex-1"
               size="lg"
             >
