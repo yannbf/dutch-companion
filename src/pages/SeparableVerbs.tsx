@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { separableVerbs, SeparableVerbExercise } from "@/data/separableVerbs";
+import { omTeExercises, SentenceExercise } from "@/data/omTe";
 import { motion, Reorder, AnimatePresence } from "framer-motion";
 import type { PanInfo } from "framer-motion";
 import { Volume2, Check, X, Keyboard } from "lucide-react";
@@ -14,12 +15,14 @@ const TOTAL_ROUNDS = 10;
 
 type WordItem = { id: string; text: string };
 
+type SentenceBuilderExercise = SeparableVerbExercise | SentenceExercise;
+
 const SeparableVerbs = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [currentRound, setCurrentRound] = useState(0);
-  const [exercises, setExercises] = useState<SeparableVerbExercise[]>([]);
-  const [currentExercise, setCurrentExercise] = useState<SeparableVerbExercise | null>(null);
+  const [exercises, setExercises] = useState<SentenceBuilderExercise[]>([]);
+  const [currentExercise, setCurrentExercise] = useState<SentenceBuilderExercise | null>(null);
   const [userAnswer, setUserAnswer] = useState<WordItem[]>([]);
   const [availableWords, setAvailableWords] = useState<WordItem[]>([]);
   const [isCorrect, setIsCorrect] = useState<boolean | null>(null);
@@ -40,21 +43,20 @@ const SeparableVerbs = () => {
   useEffect(() => {
     const difficultiesParam = searchParams.get("difficulties") || "easy,medium,hard";
     const selectedDifficulties = difficultiesParam.split(",");
-    
-    const filtered = separableVerbs.filter(v => 
-      selectedDifficulties.includes(v.difficulty)
-    );
-    
+    const mode = (searchParams.get("mode") || "separable-verbs") as "separable-verbs" | "om-te";
+
+    const pool = mode === "separable-verbs" ? separableVerbs : omTeExercises;
+    const filtered = pool.filter((v) => selectedDifficulties.includes(v.difficulty));
     const shuffled = [...filtered].sort(() => Math.random() - 0.5);
     const selected = shuffled.slice(0, TOTAL_ROUNDS);
-    
+
     setExercises(selected);
     if (selected.length > 0) {
       initializeRound(selected[0]);
     }
   }, [searchParams]);
 
-  const initializeRound = (exercise: SeparableVerbExercise) => {
+  const initializeRound = (exercise: SentenceBuilderExercise) => {
     setCurrentExercise(exercise);
     const items: WordItem[] = exercise.sentence.map((word, i) => ({
       id: `${word}-${i}-${Math.random().toString(36).slice(2, 8)}`,
@@ -110,7 +112,12 @@ const SeparableVerbs = () => {
       hapticService.medium();
       setScore(score + 1);
       setWrongStreak(0);
-      exerciseStats.recordAttempt("verbs", currentExercise.difficulty, currentExercise.verb, true);
+      exerciseStats.recordAttempt(
+        "verbs",
+        currentExercise.difficulty,
+        "verb" in currentExercise ? currentExercise.verb : undefined,
+        true
+      );
       
       setTimeout(() => {
         if (currentRound + 1 >= TOTAL_ROUNDS) {
@@ -125,7 +132,12 @@ const SeparableVerbs = () => {
       hapticService.medium();
       setWrongStreak((prev) => prev + 1);
       setShakeTrigger((s) => s + 1);
-      exerciseStats.recordAttempt("verbs", currentExercise.difficulty, currentExercise.verb, false);
+      exerciseStats.recordAttempt(
+        "verbs",
+        currentExercise.difficulty,
+        "verb" in currentExercise ? currentExercise.verb : undefined,
+        false
+      );
     }
   };
 
@@ -549,12 +561,14 @@ const SeparableVerbs = () => {
 
         
 
-        <div className="text-center text-sm text-muted-foreground">
-          <p>Separable verb: <span className="font-semibold">{currentExercise.verb}</span></p>
-          <p className="text-xs mt-1">
-            ({currentExercise.conjugatedVerb} + {currentExercise.prefix})
-          </p>
-        </div>
+        {"verb" in currentExercise && (
+          <div className="text-center text-sm text-muted-foreground">
+            <p>Separable verb: <span className="font-semibold">{currentExercise.verb}</span></p>
+            <p className="text-xs mt-1">
+              ({currentExercise.conjugatedVerb} + {currentExercise.prefix})
+            </p>
+          </div>
+        )}
       </div>
     </div>
   );
