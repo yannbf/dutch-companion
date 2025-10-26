@@ -8,29 +8,13 @@ import { omTeExercises } from "@/data/omTe";
 
 const SeparableVerbsSetup = () => {
   const navigate = useNavigate();
-  const [selectedDifficulties, setSelectedDifficulties] = useState<string[]>(["easy", "medium", "hard"]);
   const [mode, setMode] = useState<"separable-verbs" | "om-te">("separable-verbs");
 
   const source = mode === "separable-verbs" ? separableVerbs : omTeExercises;
-  const difficulties = [
-    { id: "easy", label: "Easy", count: source.filter((v) => v.difficulty === "easy").length },
-    { id: "medium", label: "Medium", count: source.filter((v) => v.difficulty === "medium").length },
-    { id: "hard", label: "Hard", count: source.filter((v) => v.difficulty === "hard").length },
-  ];
-
-  const toggleDifficulty = (difficultyId: string) => {
-    setSelectedDifficulties(prev =>
-      prev.includes(difficultyId)
-        ? prev.filter(id => id !== difficultyId)
-        : [...prev, difficultyId]
-    );
-  };
+  const roundsLabel = Math.min(20, source.length);
 
   const handleStart = () => {
-    if (selectedDifficulties.length === 0) return;
-    
     const params = new URLSearchParams();
-    params.set("difficulties", selectedDifficulties.join(","));
     params.set("mode", mode);
     navigate(`/exercises/separable-verbs/play?${params.toString()}`);
   };
@@ -70,36 +54,8 @@ const SeparableVerbsSetup = () => {
                     <p className="text-sm text-muted-foreground mt-1">{m.description}</p>
                   </div>
                   <span className="text-sm text-muted-foreground">{
-                    (m.id === "separable-verbs" ? separableVerbs : omTeExercises)
-                      .filter((v) => selectedDifficulties.includes(v.difficulty)).length
+                    (m.id === "separable-verbs" ? separableVerbs : omTeExercises).length
                   } items</span>
-                </div>
-              </Card>
-            ))}
-          </div>
-        </div>
-
-        <div className="space-y-4">
-          <h2 className="text-xl font-semibold">Select Difficulty</h2>
-          <div className="grid grid-cols-3 gap-3">
-            {difficulties.map((difficulty) => (
-              <Card
-                key={difficulty.id}
-                className={`p-3 cursor-pointer transition-all border-2 touch-manipulation relative ${
-                  selectedDifficulties.includes(difficulty.id)
-                    ? "border-primary bg-primary/5"
-                    : "border-border hover:border-primary/50"
-                }`}
-                onClick={() => toggleDifficulty(difficulty.id)}
-              >
-                {selectedDifficulties.includes(difficulty.id) && (
-                  <div className="absolute top-1.5 right-1.5 bg-primary text-primary-foreground rounded-full w-4 h-4 flex items-center justify-center text-[10px] font-bold">
-                    <Check className="w-3 h-3" />
-                  </div>
-                )}
-                <div className="flex flex-col items-center text-center gap-1">
-                  <span className="font-medium text-sm">{difficulty.label}</span>
-                  <span className="text-xs text-muted-foreground">{difficulty.count} exercises</span>
                 </div>
               </Card>
             ))}
@@ -108,11 +64,10 @@ const SeparableVerbsSetup = () => {
 
         <Button
           onClick={handleStart}
-          disabled={selectedDifficulties.length === 0}
           className="w-full"
           size="lg"
         >
-          Start Practice (10 rounds)
+          Start Practice ({roundsLabel} rounds)
         </Button>
       </div>
     </div>

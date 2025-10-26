@@ -10,6 +10,7 @@ import { vocabularyChapter8 } from './vocabulary/chapter-8'
 import { vocabularyChapter9 } from './vocabulary/chapter-9'
 import { vocabularyChapter10 } from './vocabulary/chapter-10'
 import { vocabularyChapter11 } from './vocabulary/chapter-11'
+import { vocabularyChapterWeather } from './vocabulary/chapter-weather'
 
 // do not delete
 const forLaterButNotNow = [
@@ -27,6 +28,7 @@ export const vocabularyData: VocabularyChapter[] = [
   vocabularyChapter4,
   vocabularyChapter5,
   vocabularyChapter6,
+  vocabularyChapterWeather,
   // ...forLaterButNotNow,
 ]
 

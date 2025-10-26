@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import { GraduationCap, BookOpen, FileText, Shuffle } from "lucide-react";
+import { GraduationCap, BookOpen, FileText, Shuffle, CloudSun } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 
 const Exercises = () => {
@@ -33,6 +33,13 @@ const Exercises = () => {
       description: "Build sentences with separable verbs by arranging words",
       icon: Shuffle,
       path: "/exercises/separable-verbs",
+    },
+    {
+      id: "weather",
+      title: "Weather",
+      description: "Learn weather words and classify sentence sentiment",
+      icon: CloudSun,
+      path: "/exercises/weather",
     },
   ];
 
