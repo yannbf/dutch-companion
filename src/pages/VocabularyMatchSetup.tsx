@@ -4,14 +4,12 @@ import { ArrowLeft, Play } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { vocabularyData } from "@/data/vocabulary";
 import { createLocalStorageStore } from "@/lib/localStorage";
-import { Card } from "@/components/ui/card";
 
 const selectedChaptersStore = createLocalStorageStore<number[]>('vocab-match-selected-chapters', []);
 const includeFavoritesStore = createLocalStorageStore<boolean>('vocab-match-include-favorites', false);
 
 // Get favorites from vocabulary flashcards store
 const favoritesStore = createLocalStorageStore<string[]>('vocabulary-favorites', []);
-type MatchMode = "quick" | "full";
 
 const VocabularyMatchSetup = () => {
   const navigate = useNavigate();
@@ -21,7 +19,6 @@ const VocabularyMatchSetup = () => {
   const [includeFavorites, setIncludeFavorites] = useState<boolean>(() => {
     return includeFavoritesStore.get();
   });
-  const [mode, setMode] = useState<MatchMode>("quick");
 
   const favorites = favoritesStore.get();
   const favoriteWords = vocabularyData
@@ -48,9 +45,7 @@ const VocabularyMatchSetup = () => {
 
   const handleStartGame = () => {
     if (selectedChapters.length === 0 && !includeFavorites) return;
-    const params = new URLSearchParams();
-    params.set("mode", mode);
-    navigate(`/exercises/vocabulary-match/play?${params.toString()}`);
+    navigate("/exercises/vocabulary-match/play");
   };
 
   return (
@@ -97,36 +92,6 @@ const VocabularyMatchSetup = () => {
                   </button>
                 );
               })}
-            </div>
-          </div>
-
-          <div className="space-y-4">
-            <h2 className="text-lg font-semibold">Mode</h2>
-            <div className="grid grid-cols-2 gap-3">
-              {([
-                { id: "quick", label: "Quick", description: "15 words" },
-                { id: "full", label: "Full", description: "All selected words" },
-              ] as { id: MatchMode; label: string; description: string }[]).map((m) => (
-                <Card
-                  key={m.id}
-                  className={`p-4 cursor-pointer transition-all border-2 touch-manipulation relative ${
-                    mode === m.id ? "border-primary bg-primary/5" : "border-border hover:border-primary/50"
-                  }`}
-                  onClick={() => setMode(m.id)}
-                >
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <span className="font-medium">{m.label}</span>
-                      <p className="text-sm text-muted-foreground mt-1">{m.description}</p>
-                    </div>
-                    {mode === m.id && (
-                      <div className="absolute top-1.5 right-1.5 w-4 h-4 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-[10px] font-bold">
-                        ✓
-                      </div>
-                    )}
-                  </div>
-                </Card>
-              ))}
             </div>
           </div>
 

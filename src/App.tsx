@@ -3,22 +3,20 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import Exercises from "@/pages/Exercises";
-import VerbsSetup from "@/pages/VerbsSetup";
-import Verbs from "@/pages/Verbs";
-import VocabularyFlashcards from "@/pages/VocabularyFlashcards";
-import Vocabulary from "@/pages/Vocabulary";
-import VocabularyStats from "@/pages/VocabularyStats";
-import VocabularyMatchSetup from "@/pages/VocabularyMatchSetup";
-import VocabularyMatch from "@/pages/VocabularyMatch";
-import Settings from "@/pages/Settings";
-import DeOfHetSetup from "@/pages/DeOfHetSetup";
-import DeOfHet from "@/pages/DeOfHet";
-import SeparableVerbsSetup from "@/pages/SeparableVerbsSetup";
-import SeparableVerbs from "@/pages/SeparableVerbs";
-import WeatherSetup from "@/pages/WeatherSetup";
-import Weather from "@/pages/Weather";
-import NotFound from "@/pages/NotFound";
+import Exercises from "./pages/Exercises";
+import VerbsSetup from "./pages/VerbsSetup";
+import Verbs from "./pages/Verbs";
+import VocabularyFlashcards from "./pages/VocabularyFlashcards";
+import Vocabulary from "./pages/Vocabulary";
+import VocabularyStats from "./pages/VocabularyStats";
+import VocabularyMatchSetup from "./pages/VocabularyMatchSetup";
+import VocabularyMatch from "./pages/VocabularyMatch";
+import Settings from "./pages/Settings";
+import DeOfHetSetup from "./pages/DeOfHetSetup";
+import DeOfHet from "./pages/DeOfHet";
+import SeparableVerbsSetup from "./pages/SeparableVerbsSetup";
+import SeparableVerbs from "./pages/SeparableVerbs";
+import NotFound from "./pages/NotFound";
 import { BottomNav } from "./components/BottomNav";
 
 const queryClient = new QueryClient();
@@ -43,8 +41,6 @@ const App = () => (
             <Route path="/exercises/deofhet/play" element={<DeOfHet />} />
             <Route path="/exercises/separable-verbs" element={<SeparableVerbsSetup />} />
             <Route path="/exercises/separable-verbs/play" element={<SeparableVerbs />} />
-            <Route path="/exercises/weather" element={<WeatherSetup />} />
-            <Route path="/exercises/weather/play" element={<Weather />} />
             <Route path="/vocabulary" element={<Vocabulary />} />
             <Route path="/settings" element={<Settings />} />
             <Route path="*" element={<NotFound />} />

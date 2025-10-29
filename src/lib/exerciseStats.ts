@@ -19,13 +19,12 @@ const DEFAULT_BUCKET: ExerciseStatsBucket = {
   seenWordsByChapter: {},
 }
 
-export type ExerciseType = 'vocabulary' | 'deofhet' | 'verbs' | 'weather'
+export type ExerciseType = 'vocabulary' | 'deofhet' | 'verbs'
 
 export interface ExerciseStatsData {
   vocabulary: ExerciseStatsBucket
   deofhet: ExerciseStatsBucket
   verbs: ExerciseStatsBucket
-  weather: ExerciseStatsBucket
 }
 
 const STATS_KEY = 'exercise-stats-v2'
@@ -33,7 +32,6 @@ const statsStore = createLocalStorageStore<ExerciseStatsData>(STATS_KEY, {
   vocabulary: { ...DEFAULT_BUCKET },
   deofhet: { ...DEFAULT_BUCKET },
   verbs: { ...DEFAULT_BUCKET },
-  weather: { ...DEFAULT_BUCKET },
 })
 
 export const exerciseStats = {
@@ -88,7 +86,6 @@ export const exerciseStats = {
       vocabulary: { ...DEFAULT_BUCKET },
       deofhet: { ...DEFAULT_BUCKET },
       verbs: { ...DEFAULT_BUCKET },
-      weather: { ...DEFAULT_BUCKET },
     })
   },
 }

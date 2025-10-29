@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { ArrowLeft, Volume2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { vocabularyData, VocabularyWord } from "@/data/vocabulary";
@@ -23,7 +23,6 @@ const favoritesStore = createLocalStorageStore<string[]>('vocabulary-favorites',
 
 const VocabularyMatch = () => {
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
   const [currentTurn, setCurrentTurn] = useState(0);
   const [selectedDutch, setSelectedDutch] = useState<number | null>(null);
   const [matches, setMatches] = useState<Set<number>>(new Set());
@@ -36,7 +35,7 @@ const VocabularyMatch = () => {
     const includeFavorites = includeFavoritesStore.get();
     const favorites = favoritesStore.get();
 
-    const words: VocabularyWord[] = [];
+    let words: VocabularyWord[] = [];
 
     if (selectedChapters.length > 0) {
       words.push(...vocabularyData
@@ -61,14 +60,10 @@ const VocabularyMatch = () => {
   const turns = useMemo(() => {
     const turnsData: MatchPair[][] = [];
     const wordsPerTurn = 5;
-    const mode = (searchParams.get("mode") || "quick") as "quick" | "full";
-    const limitedWordsCount = mode === "quick" ? Math.min(15, allWords.length) : allWords.length;
-    const limitedWords = allWords.slice(0, limitedWordsCount);
-    const maxTurns = Math.ceil(limitedWords.length / wordsPerTurn);
-
-    for (let i = 0; i < maxTurns; i++) {
+    
+    for (let i = 0; i < 5; i++) {
       const startIdx = i * wordsPerTurn;
-      const turnWords = limitedWords.slice(startIdx, startIdx + wordsPerTurn);
+      const turnWords = allWords.slice(startIdx, startIdx + wordsPerTurn);
       
       if (turnWords.length === 0) break;
       
@@ -83,7 +78,7 @@ const VocabularyMatch = () => {
     }
     
     return turnsData;
-  }, [allWords, searchParams]);
+  }, [allWords]);
 
   const currentPairs = turns[currentTurn];
   const shuffledEnglish = useMemo(() => {
@@ -94,7 +89,7 @@ const VocabularyMatch = () => {
   useEffect(() => {
     if (currentPairs && matches.size === currentPairs.length) {
       const timer = setTimeout(() => {
-        if (currentTurn < turns.length - 1) {
+        if (currentTurn < 4 && currentTurn < turns.length - 1) {
           setCurrentTurn(prev => prev + 1);
           setMatches(new Set());
           setSelectedDutch(null);
@@ -103,7 +98,7 @@ const VocabularyMatch = () => {
         } else {
           setShowSummary(true);
         }
-      }, 1000);
+      }, 2000);
       return () => clearTimeout(timer);
     }
   }, [matches, currentPairs, currentTurn, turns.length]);
@@ -203,7 +198,7 @@ const VocabularyMatch = () => {
             <ArrowLeft className="w-5 h-5" />
           </Button>
           <div className="flex gap-2">
-            {Array.from({ length: turns.length }).map((_, i) => (
+            {[0, 1, 2, 3, 4].map((i) => (
               <div
                 key={i}
                 className={`w-8 h-2 rounded-full transition-colors ${
@@ -217,7 +212,7 @@ const VocabularyMatch = () => {
             ))}
           </div>
           <div className="text-sm font-medium">
-            Turn {currentTurn + 1}/{turns.length}
+            Turn {currentTurn + 1}/5
           </div>
         </div>
       </div>

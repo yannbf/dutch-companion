@@ -11,7 +11,7 @@ import { speakerService } from "@/services/speaker";
 import { hapticService } from "@/services/haptic";
 import { exerciseStats } from "@/lib/exerciseStats";
 
-const MAX_ROUNDS = 20;
+const TOTAL_ROUNDS = 10;
 
 type WordItem = { id: string; text: string };
 
@@ -23,7 +23,6 @@ const SeparableVerbs = () => {
   const [currentRound, setCurrentRound] = useState(0);
   const [exercises, setExercises] = useState<SentenceBuilderExercise[]>([]);
   const [currentExercise, setCurrentExercise] = useState<SentenceBuilderExercise | null>(null);
-  const [totalRounds, setTotalRounds] = useState(0);
   const [userAnswer, setUserAnswer] = useState<WordItem[]>([]);
   const [availableWords, setAvailableWords] = useState<WordItem[]>([]);
   const [isCorrect, setIsCorrect] = useState<boolean | null>(null);
@@ -42,15 +41,16 @@ const SeparableVerbs = () => {
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
 
   useEffect(() => {
+    const difficultiesParam = searchParams.get("difficulties") || "easy,medium,hard";
+    const selectedDifficulties = difficultiesParam.split(",");
     const mode = (searchParams.get("mode") || "separable-verbs") as "separable-verbs" | "om-te";
 
     const pool = mode === "separable-verbs" ? separableVerbs : omTeExercises;
-    const limit = Math.min(MAX_ROUNDS, pool.length);
-    const shuffled = [...pool].sort(() => Math.random() - 0.5);
-    const selected = shuffled.slice(0, limit);
+    const filtered = pool.filter((v) => selectedDifficulties.includes(v.difficulty));
+    const shuffled = [...filtered].sort(() => Math.random() - 0.5);
+    const selected = shuffled.slice(0, TOTAL_ROUNDS);
 
     setExercises(selected);
-    setTotalRounds(selected.length);
     if (selected.length > 0) {
       initializeRound(selected[0]);
     }
@@ -120,7 +120,7 @@ const SeparableVerbs = () => {
       );
       
       setTimeout(() => {
-        if (currentRound + 1 >= totalRounds) {
+        if (currentRound + 1 >= TOTAL_ROUNDS) {
           setShowResults(true);
         } else {
           setCurrentRound(currentRound + 1);
@@ -182,10 +182,10 @@ const SeparableVerbs = () => {
             <h2 className="text-2xl font-bold text-center">Results</h2>
             <div className="text-center space-y-2">
               <div className="text-6xl font-bold text-primary">
-                {score}/{totalRounds}
+                {score}/{TOTAL_ROUNDS}
               </div>
               <p className="text-muted-foreground">
-                {Math.round((score / Math.max(1, totalRounds)) * 100)}% correct
+                {Math.round((score / TOTAL_ROUNDS) * 100)}% correct
               </p>
             </div>
             <div className="flex gap-3">
@@ -286,7 +286,7 @@ const SeparableVerbs = () => {
         {/* Progress */}
         <div className="flex items-center justify-between">
           <span className="text-sm font-medium">
-            Round {Math.min(currentRound + 1, totalRounds)}/{totalRounds}
+            Round {currentRound + 1}/{TOTAL_ROUNDS}
           </span>
           <span className="text-sm font-medium">
             Score: {score}
@@ -297,7 +297,7 @@ const SeparableVerbs = () => {
         <div className="w-full bg-secondary rounded-full h-2">
           <div
             className="bg-primary h-2 rounded-full transition-all duration-300"
-            style={{ width: `${(totalRounds > 0 ? ((currentRound + 1) / totalRounds) : 0) * 100}%` }}
+            style={{ width: `${((currentRound + 1) / TOTAL_ROUNDS) * 100}%` }}
           />
         </div>
 
