@@ -7,6 +7,7 @@ import { createLocalStorageStore } from "@/lib/localStorage";
 
 const selectedChaptersStore = createLocalStorageStore<number[]>('vocab-match-selected-chapters', []);
 const includeFavoritesStore = createLocalStorageStore<boolean>('vocab-match-include-favorites', false);
+const onlySeparableStore = createLocalStorageStore<boolean>('vocab-match-only-separable', false);
 
 // Get favorites from vocabulary flashcards store
 const favoritesStore = createLocalStorageStore<string[]>('vocabulary-favorites', []);
@@ -18,6 +19,9 @@ const VocabularyMatchSetup = () => {
   });
   const [includeFavorites, setIncludeFavorites] = useState<boolean>(() => {
     return includeFavoritesStore.get();
+  });
+  const [onlySeparable, setOnlySeparable] = useState<boolean>(() => {
+    return onlySeparableStore.get();
   });
 
   const favorites = favoritesStore.get();
@@ -39,6 +43,14 @@ const VocabularyMatchSetup = () => {
     setIncludeFavorites((prev) => {
       const next = !prev;
       includeFavoritesStore.set(next);
+      return next;
+    });
+  };
+
+  const handleOnlySeparableToggle = () => {
+    setOnlySeparable((prev) => {
+      const next = !prev;
+      onlySeparableStore.set(next);
       return next;
     });
   };
@@ -113,6 +125,32 @@ const VocabularyMatchSetup = () => {
                   <div className="text-xs text-muted-foreground">{favoriteWords.length} words</div>
                 </div>
                 {includeFavorites && (
+                  <div className="w-4 h-4 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-[10px] font-bold">
+                    ✓
+                  </div>
+                )}
+              </div>
+            </button>
+          </div>
+
+          <div>
+            <button
+              onClick={handleOnlySeparableToggle}
+              className={`
+                w-full p-4 rounded-lg border-2 transition-all text-left
+                active:scale-95 touch-manipulation
+                ${onlySeparable 
+                  ? 'border-primary bg-primary/10' 
+                  : 'border-border bg-card hover:border-primary/50'
+                }
+              `}
+            >
+              <div className="flex items-center justify-between">
+                <div className="space-y-1">
+                  <div className="text-sm font-bold">Only separable verbs</div>
+                  <div className="text-xs text-muted-foreground">Filter to scheidbare-werkwoorden</div>
+                </div>
+                {onlySeparable && (
                   <div className="w-4 h-4 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-[10px] font-bold">
                     ✓
                   </div>

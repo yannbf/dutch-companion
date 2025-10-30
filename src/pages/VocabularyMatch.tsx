@@ -19,6 +19,7 @@ interface MatchPair {
 
 const selectedChaptersStore = createLocalStorageStore<number[]>('vocab-match-selected-chapters', []);
 const includeFavoritesStore = createLocalStorageStore<boolean>('vocab-match-include-favorites', false);
+const onlySeparableStore = createLocalStorageStore<boolean>('vocab-match-only-separable', false);
 const favoritesStore = createLocalStorageStore<string[]>('vocabulary-favorites', []);
 
 const VocabularyMatch = () => {
@@ -34,6 +35,7 @@ const VocabularyMatch = () => {
     const selectedChapters = selectedChaptersStore.get();
     const includeFavorites = includeFavoritesStore.get();
     const favorites = favoritesStore.get();
+    const onlySeparable = onlySeparableStore.get();
 
     let words: VocabularyWord[] = [];
 
@@ -48,6 +50,10 @@ const VocabularyMatch = () => {
         .flatMap(chapter => chapter.words)
         .filter(word => favorites.includes(word.word));
       words.push(...favoriteWords);
+    }
+
+    if (onlySeparable) {
+      words = words.filter((word) => word.category === 'scheidbare-werkwoorden');
     }
 
     const uniqueWords = words.filter((word, index, self) =>
