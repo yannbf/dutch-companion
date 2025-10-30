@@ -12,10 +12,20 @@ import { reviewTracker } from "@/lib/reviewTracker";
 import { exerciseStats } from "@/lib/exerciseStats";
 
 // Convert VocabularyWord to generic CardContent format
-const createVocabularyCardContent = (word: VocabularyWord): CardContent => ({
+const createVocabularyCardContent = (word: VocabularyWord, flipped: boolean): CardContent => ({
   id: word.word,
   states: [
-    {
+    // Front side
+    flipped ? {
+      id: "front",
+      content: (
+        <div className="text-center space-y-6">
+          <div className="space-y-2">
+            <p className="text-2xl text-muted-foreground font-medium">{word.translation}</p>
+          </div>
+        </div>
+      ) as ReactNode,
+    } : {
       id: "front",
       content: (
         <div className="text-center space-y-6">
@@ -28,7 +38,27 @@ const createVocabularyCardContent = (word: VocabularyWord): CardContent => ({
         </div>
       ) as ReactNode,
     },
-    {
+    // Back side
+    flipped ? {
+      id: "back",
+      content: (
+        <div className="text-center space-y-6 w-full">
+          <div className="space-y-4">
+            <div className="space-y-2">
+              {word.article && (
+                <p className="text-2xl text-muted-foreground font-medium">{word.article}</p>
+              )}
+              <h2 className="text-3xl font-black text-primary">{word.word}</h2>
+            </div>
+            <div className="pt-4 border-t">
+              <p className="text-sm text-muted-foreground mb-2">Example:</p>
+              <p className="italic text-lg">{word.exampleSentence}</p>
+            </div>
+          </div>
+        </div>
+      ) as ReactNode,
+      audioText: word.exampleSentence,
+    } : {
       id: "back",
       content: (
         <div className="text-center space-y-6 w-full">
@@ -52,6 +82,7 @@ interface VocabularyCardPileProps {
   cardState: 0 | 1; // 0: front, 1: back
   onFlip: () => void;
   onSwipe: (direction: "left" | "right") => void;
+  flipped: boolean;
 }
 
 const VocabularyCardPile = ({
@@ -59,10 +90,11 @@ const VocabularyCardPile = ({
   currentIndex,
   cardState,
   onFlip,
-  onSwipe
+  onSwipe,
+  flipped
 }: VocabularyCardPileProps) => {
   // Convert words to generic card content format
-  const wordCards = words.map(word => createVocabularyCardContent(word));
+  const wordCards = words.map(word => createVocabularyCardContent(word, flipped));
 
   return (
     <SwipeableCardPile
@@ -110,6 +142,7 @@ interface VocabResult {
 // Create stores for vocabulary flashcard settings
 const selectedChaptersStore = createLocalStorageStore<number[]>('vocab-selected-chapters', []);
 const includeFavoritesStore = createLocalStorageStore<boolean>('vocab-include-favorites', false);
+const flippedModeStore = createLocalStorageStore<boolean>('vocab-flipped-mode', false);
 
 const VocabularyFlashcards = () => {
   const navigate = useNavigate();
@@ -135,6 +168,7 @@ const VocabularyFlashcards = () => {
   const [results, setResults] = useState<VocabResult[]>([]);
   const [showSummary, setShowSummary] = useState(false);
   const [voiceMode, setVoiceMode] = useState(true);
+  const [flippedMode, setFlippedMode] = useState<boolean>(() => flippedModeStore.get());
   const { getFavoriteWords } = useFavorites();
   const lastSpeechTime = useRef<number>(0);
   const speechTimeout = useRef<NodeJS.Timeout | null>(null);
@@ -214,12 +248,13 @@ const VocabularyFlashcards = () => {
   // Voice mode effect - speak when card changes
   useEffect(() => {
     if (voiceMode && currentWord) {
-      if (cardState === 0) {
-        // Speak the word
+      const dutchSideState = flippedMode ? 1 : 0;
+      if (cardState === dutchSideState) {
+        // Speak the Dutch word when the Dutch side is visible
         debouncedSpeak(currentWord.word);
       }
     }
-  }, [cardState, currentWord, voiceMode]);
+  }, [cardState, currentWord, voiceMode, flippedMode]);
 
   // Cleanup timeout on unmount or when voice mode is disabled
   useEffect(() => {
@@ -248,6 +283,14 @@ const VocabularyFlashcards = () => {
     setIncludeFavorites((prev) => {
       const next = !prev;
       includeFavoritesStore.set(next);
+      return next;
+    });
+  };
+
+  const handleFlippedToggle = () => {
+    setFlippedMode((prev) => {
+      const next = !prev;
+      flippedModeStore.set(next);
       return next;
     });
   };
@@ -397,6 +440,32 @@ const VocabularyFlashcards = () => {
               </button>
             </div>
 
+            <div>
+              <button
+                onClick={handleFlippedToggle}
+                className={`
+                  w-full mt-3 p-4 rounded-lg border-2 transition-all text-left
+                  active:scale-95 touch-manipulation
+                  ${flippedMode 
+                    ? 'border-primary bg-primary/10' 
+                    : 'border-border bg-card hover:border-primary/50'
+                  }
+                `}
+              >
+                <div className="flex items-center justify-between">
+                  <div className="space-y-1">
+                    <div className="text-sm font-bold">Flipped mode (EN → NL)</div>
+                    <div className="text-xs text-muted-foreground">Show English first; flip to see Dutch</div>
+                  </div>
+                  {flippedMode && (
+                    <div className="w-4 h-4 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-[10px] font-bold">
+                      ✓
+                    </div>
+                  )}
+                </div>
+              </button>
+            </div>
+
             <Button
               onClick={handleStartGame}
               disabled={selectedChapters.length === 0 && !includeFavorites}
@@ -463,6 +532,7 @@ const VocabularyFlashcards = () => {
               cardState={cardState}
               onFlip={handleFlip}
               onSwipe={handleSwipe}
+              flipped={flippedMode}
             />
           )}
         </div>

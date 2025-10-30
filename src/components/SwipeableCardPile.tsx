@@ -148,9 +148,10 @@ export function SwipeableCardPile<T extends CardContent>({
         const translateX = index * 4; // Each card is 4px to the right
         const zIndex = 10 - index; // Much higher z-index for cards on top
 
-        // Ensure currentState is within bounds for this specific card
+        // Ensure only the active card respects the currentState; background cards always show front
         const safeCurrentState = Math.min(currentState, card.states.length - 1);
-        const cardStateContent = card.states[safeCurrentState];
+        const stateIndexForCard = isActive ? safeCurrentState : 0;
+        const cardStateContent = card.states[stateIndexForCard];
 
         return (
           <motion.div
