@@ -19,7 +19,7 @@ export interface VocabularyWord {
 }
 
 export interface VocabularyChapter {
-  chapter: number
+  chapter: number | string
   id: string
   title: string
   words: VocabularyWord[]
