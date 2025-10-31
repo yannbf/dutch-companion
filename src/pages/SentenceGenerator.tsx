@@ -1,5 +1,5 @@
 import { useState, ReactNode, useCallback } from "react";
-import { Button } from "@/components/ui/button";
+// import { Button } from "@/components/ui/button";
 import { Shuffle, Plus, User, Clock, Sparkles } from "lucide-react";
 
 const pronouns = [
@@ -278,6 +278,10 @@ const SentenceGenerator = () => {
   return (
     <div className="min-h-screen bg-background pb-24 pt-6 px-4">
       <div className="max-w-2xl mx-auto space-y-6">
+        <style>{`
+          @keyframes wheel-spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+          @-webkit-keyframes wheel-spin { from { -webkit-transform: rotate(0deg); } to { -webkit-transform: rotate(360deg); } }
+        `}</style>
         <div className="space-y-2 text-center">
           <h1 className="text-3xl font-bold">Sentence generator</h1>
           <p className="text-muted-foreground text-sm">
@@ -333,7 +337,9 @@ const SentenceGenerator = () => {
                   "conic-gradient(from 0deg, rgba(59,130,246,0.9), rgba(147,51,234,0.9), rgba(16,185,129,0.9), rgba(245,158,11,0.9), rgba(244,63,94,0.9), rgba(59,130,246,0.9))",
                 boxShadow: "0 6px 16px rgba(0,0,0,0.08)",
                 willChange: "transform",
-                animation: spinningAll ? "spin 1s linear 1" : undefined,
+                transform: "translateZ(0)",
+                animation: spinningAll ? "wheel-spin 1s linear 1" : undefined,
+                WebkitAnimation: spinningAll ? "wheel-spin 1s linear 1" : undefined,
               }}
             />
             <span
