@@ -1,6 +1,6 @@
 import { useState, ReactNode, useCallback } from "react";
-// import { Button } from "@/components/ui/button";
 import { Shuffle, Plus, User, Clock, Sparkles } from "lucide-react";
+import { AppHeader } from "@/components/AppHeader";
 
 const pronouns = [
   "u",
@@ -276,14 +276,17 @@ const SentenceGenerator = () => {
   }, [spinningAll, rollPronoun, rollTense, rollVerb]);
 
   return (
-    <div className="min-h-screen bg-background pb-24 pt-6 px-4">
-      <div className="max-w-2xl mx-auto space-y-6">
+    <div className="min-h-screen bg-background pb-24">
+      <AppHeader
+        title="Sentence Generator"
+      />
+      
+      <div className="max-w-2xl mx-auto space-y-6 pt-20 px-4">
         <style>{`
           @keyframes wheel-spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
           @-webkit-keyframes wheel-spin { from { -webkit-transform: rotate(0deg); } to { -webkit-transform: rotate(360deg); } }
         `}</style>
         <div className="space-y-2 text-center">
-          <h1 className="text-3xl font-bold">Sentence generator</h1>
           <p className="text-muted-foreground text-sm">
             Combine and generate a sentence by spinning the wheel for each part: pronoun, time and verb.
           </p>

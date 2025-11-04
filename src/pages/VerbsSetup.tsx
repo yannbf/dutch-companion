@@ -87,7 +87,7 @@ const VerbsSetup = () => {
 
   return (
     <ExerciseSetupLayout
-      title="Onregelmatige werkwoorden"
+      title="Verb tenses"
       subtitle="Configure your practice"
       startButton={{
         label: `Start Practice (${getVerbCount(category)} verbs)`,

@@ -3,7 +3,7 @@ import { vocabularyData } from "@/data/vocabulary";
 import type { VocabularyWord } from "@/data/types";
 import { SwipeableCardPile, CardContent } from "@/components/SwipeableCardPile";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, RotateCcw, BarChart2, Volume2, ChevronDown } from "lucide-react";
+import { RotateCcw, BarChart2, Volume2, ChevronDown } from "lucide-react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { speakerService } from "@/services/speaker";
 import { ReactNode } from "react";
@@ -11,6 +11,7 @@ import { createLocalStorageStore } from "@/lib/localStorage";
 import { reviewTracker } from "@/lib/reviewTracker";
 import { exerciseStats } from "@/lib/exerciseStats";
 import { ExerciseSummary } from "@/components/exercise";
+import { AppHeader } from "@/components/AppHeader";
 import {
   Collapsible,
   CollapsibleContent,
@@ -380,115 +381,110 @@ const VocabularyFlashcards = () => {
 
   if (!gameStarted) {
     return (
-      <div className="min-h-screen bg-background pb-20 pt-6 px-4">
-        <div className="max-w-4xl mx-auto space-y-6">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <Button variant="ghost" size="icon" onClick={() => navigate("/exercises")}>
-                <ArrowLeft className="w-5 h-5" />
-              </Button>
-              <h1 className="text-2xl font-bold">Vocabulary Flashcards</h1>
-            </div>
+      <div className="min-h-screen bg-background pb-20">
+        <AppHeader
+          title="Vocabulary Flashcards"
+          backPath="/exercises"
+          fixed={false}
+          right={
             <Button variant="ghost" size="icon" onClick={() => navigate('/exercises/vocabulary/stats')}>
               <BarChart2 className="w-5 h-5" />
             </Button>
-          </div>
+          }
+        />
 
-          <div className="space-y-6">
-            <div>
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-                {vocabularyData.map((chapter) => {
-                  const chapterNum = Number(chapter.chapter);
-                  const isSelected = selectedChapters.includes(chapterNum);
-                  return (
-                    <button
-                      key={chapter.chapter}
-                      onClick={() => handleChapterToggle(chapterNum)}
-                      className={`
+        <div className="max-w-4xl mx-auto space-y-4 px-4 pt-6">
+
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+            {vocabularyData.map((chapter) => {
+              const chapterNum = Number(chapter.chapter);
+              const isSelected = selectedChapters.includes(chapterNum);
+              return (
+                <button
+                  key={chapter.chapter}
+                  onClick={() => handleChapterToggle(chapterNum)}
+                  className={`
                         relative p-4 rounded-lg border-2 transition-all text-left
                         active:scale-95 touch-manipulation
-                        ${isSelected 
-                          ? 'border-primary bg-primary/10' 
-                          : 'border-border bg-card hover:border-primary/50'
-                        }
+                        ${isSelected
+                      ? 'border-primary bg-primary/10'
+                      : 'border-border bg-card hover:border-primary/50'
+                    }
                       `}
-                    >
-                      <div className="space-y-1">
-                        <div className="text-sm font-bold line-clamp-2">Chapter {chapter.chapter}</div>
-                        <div className="text-xs text-muted-foreground">{chapter.title} ({chapter.words.length} words)</div>
-                      </div>
-                      {isSelected && (
-                        <div className="absolute top-1.5 right-1.5 w-4 h-4 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-[10px] font-bold">
-                          ✓
-                        </div>
-                      )}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
+                >
+                  <div className="space-y-1">
+                    <div className="text-sm font-bold line-clamp-2">Chapter {chapter.chapter}</div>
+                    <div className="text-xs text-muted-foreground">{chapter.title} ({chapter.words.length} words)</div>
+                  </div>
+                  {isSelected && (
+                    <div className="absolute top-1.5 right-1.5 w-4 h-4 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-[10px] font-bold">
+                      ✓
+                    </div>
+                  )}
+                </button>
+              );
+            })}
+          </div>
 
-            <div className="border-t pt-4">
-              <button
-                onClick={handleFavoritesToggle}
-                className={`
+          <hr className="border-t" />
+
+          <button
+            onClick={handleFavoritesToggle}
+            className={`
                   w-full p-4 rounded-lg border-2 transition-all text-left
                   active:scale-95 touch-manipulation
-                  ${includeFavorites 
-                    ? 'border-primary bg-primary/10' 
-                    : 'border-border bg-card hover:border-primary/50'
-                  }
+                  ${includeFavorites
+                ? 'border-primary bg-primary/10'
+                : 'border-border bg-card hover:border-primary/50'
+              }
                 `}
-              >
-                <div className="flex items-center justify-between">
-                  <div className="space-y-1">
-                    <div className="text-sm font-bold">♥ Favorites</div>
-                    <div className="text-xs text-muted-foreground">{getFavoriteWords().length} words</div>
-                  </div>
-                  {includeFavorites && (
-                    <div className="w-4 h-4 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-[10px] font-bold">
-                      ✓
-                    </div>
-                  )}
+          >
+            <div className="flex items-center justify-between">
+              <div className="space-y-1">
+                <div className="text-sm font-bold">♥ Favorites</div>
+                <div className="text-xs text-muted-foreground">{getFavoriteWords().length} words</div>
+              </div>
+              {includeFavorites && (
+                <div className="w-4 h-4 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-[10px] font-bold">
+                  ✓
                 </div>
-              </button>
+              )}
             </div>
+          </button>
 
-            <div>
-              <button
-                onClick={handleFlippedToggle}
-                className={`
+          <button
+            onClick={handleFlippedToggle}
+            className={`
                   w-full mt-3 p-4 rounded-lg border-2 transition-all text-left
                   active:scale-95 touch-manipulation
-                  ${flippedMode 
-                    ? 'border-primary bg-primary/10' 
-                    : 'border-border bg-card hover:border-primary/50'
-                  }
+                  ${flippedMode
+                ? 'border-primary bg-primary/10'
+                : 'border-border bg-card hover:border-primary/50'
+              }
                 `}
-              >
-                <div className="flex items-center justify-between">
-                  <div className="space-y-1">
-                    <div className="text-sm font-bold">Flipped mode (EN → NL)</div>
-                    <div className="text-xs text-muted-foreground">Show English first; flip to see Dutch</div>
-                  </div>
-                  {flippedMode && (
-                    <div className="w-4 h-4 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-[10px] font-bold">
-                      ✓
-                    </div>
-                  )}
+          >
+            <div className="flex items-center justify-between">
+              <div className="space-y-1">
+                <div className="text-sm font-bold">Flipped mode (EN → NL)</div>
+                <div className="text-xs text-muted-foreground">Show English first; flip to see Dutch</div>
+              </div>
+              {flippedMode && (
+                <div className="w-4 h-4 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-[10px] font-bold">
+                  ✓
                 </div>
-              </button>
+              )}
             </div>
+          </button>
 
-            <Button
-              onClick={handleStartGame}
-              disabled={selectedChapters.length === 0 && !includeFavorites}
-              className="w-full"
-            >
-              Start Game
-            </Button>
-          </div>
+          <Button
+            onClick={handleStartGame}
+            disabled={selectedChapters.length === 0 && !includeFavorites}
+            className="w-full"
+          >
+            Start Game
+          </Button>
         </div>
+
       </div>
     );
   }
@@ -524,9 +520,8 @@ const VocabularyFlashcards = () => {
                 </p>
               </div>
               <ChevronDown
-                className={`w-6 h-6 transition-transform absolute top-4 right-4 text-muted-foreground ${
-                  isDetailsOpen ? "rotate-180" : ""
-                }`}
+                className={`w-6 h-6 transition-transform absolute top-4 right-4 text-muted-foreground ${isDetailsOpen ? "rotate-180" : ""
+                  }`}
               />
               <CollapsibleContent className="mt-4">
                 <div className="border-t border-primary/20 pt-4 space-y-2 max-h-64 overflow-y-auto">
@@ -554,9 +549,8 @@ const VocabularyFlashcards = () => {
                           </div>
                         </div>
                         <span
-                          className={`w-3 h-3 rounded-full shrink-0 ml-2 ${
-                            result.correct ? "bg-green-500" : "bg-red-500"
-                          }`}
+                          className={`w-3 h-3 rounded-full shrink-0 ml-2 ${result.correct ? "bg-green-500" : "bg-red-500"
+                            }`}
                         />
                       </div>
                     );
@@ -572,17 +566,17 @@ const VocabularyFlashcards = () => {
 
   return (
     <div className="h-screen relative overflow-hidden flex flex-col bg-background" style={{ touchAction: 'pan-x' }}>
-      <div className="p-4 flex items-center justify-between border-b">
-        <Button variant="ghost" size="icon" onClick={handleRestart}>
-          <ArrowLeft className="w-5 h-5" />
-        </Button>
-        <div className="text-sm font-medium">
-          {currentIndex + 1} / {sessionWords.length}
-        </div>
-        <div className="flex items-center gap-2">
+      <AppHeader
+        onBack={handleRestart}
+        center={
+          <div className="text-sm font-medium">
+            {currentIndex + 1} / {sessionWords.length}
+          </div>
+        }
+        right={
           <div className="text-sm font-medium">Score: {points}</div>
-        </div>
-      </div>
+        }
+      />
 
       <Button
         variant="outline"

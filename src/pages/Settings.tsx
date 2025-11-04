@@ -40,10 +40,7 @@ const Settings = () => {
   return (
     <div className="min-h-screen bg-background pb-20 pt-6 px-4">
       <div className="max-w-2xl mx-auto space-y-6">
-        <div className="space-y-2">
-          <h1 className="text-3xl font-bold">Settings</h1>
-          <p className="text-muted-foreground">Configure your learning experience</p>
-        </div>
+        <h1 className="text-3xl font-bold mb-6 text-center">Settings</h1>
 
         <Card>
           <CardHeader>
@@ -65,7 +62,7 @@ const Settings = () => {
                 onCheckedChange={setShowTranslation}
               />
             </div>
-            
+
             <div className="flex items-center justify-between">
               <div className="space-y-0.5">
                 <Label htmlFor="random-toggle" className="text-base font-semibold cursor-pointer flex items-center gap-2">
@@ -80,7 +77,7 @@ const Settings = () => {
                 onCheckedChange={setRandomMode}
               />
             </div>
-            
+
             <div className="flex items-center justify-between">
               <div className="space-y-0.5">
                 <Label htmlFor="voice-toggle" className="text-base font-semibold cursor-pointer flex items-center gap-2">

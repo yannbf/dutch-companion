@@ -11,6 +11,7 @@ import { speakerService } from "@/services/speaker";
 import { hapticService } from "@/services/haptic";
 import { exerciseStats } from "@/lib/exerciseStats";
 import { ExerciseProgress, ExerciseSummary, ScoreDisplay } from "@/components/exercise";
+import { AppHeader } from "@/components/AppHeader";
 
 type WordItem = { id: string; text: string };
 
@@ -296,16 +297,18 @@ const SeparableVerbs = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background pb-20 pt-6 px-4">
-      <div className="max-w-2xl mx-auto space-y-6">
-        {/* Progress Header */}
-        <div className="flex items-center justify-between">
+    <div className="min-h-screen bg-background pb-20">
+      <AppHeader
+        backPath="/exercises/separable-verbs"
+        center={
           <span className="text-sm font-medium">
             Round {currentRound + 1}/{totalRounds}
           </span>
-          <ScoreDisplay score={score} variant="compact" animate={false} />
-        </div>
-
+        }
+        right={<ScoreDisplay score={score} variant="compact" animate={false} />}
+      />
+      
+      <div className="max-w-2xl mx-auto space-y-6 pt-20 px-4">
         {/* Progress bar */}
         <ExerciseProgress
           current={currentRound}

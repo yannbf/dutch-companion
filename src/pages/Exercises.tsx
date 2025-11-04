@@ -46,10 +46,7 @@ const Exercises = () => {
   return (
     <div className="min-h-screen bg-background pb-20 pt-6 px-4">
       <div className="max-w-2xl mx-auto space-y-6">
-        <div className="space-y-2">
-          <h1 className="text-3xl font-bold">Exercises</h1>
-          <p className="text-muted-foreground">Choose an exercise to start practicing</p>
-        </div>
+      <h1 className="text-3xl font-bold mb-6 text-center">Exercises</h1>
 
         <div className="grid gap-4">
           {exercises.map((exercise) => {

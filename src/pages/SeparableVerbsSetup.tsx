@@ -86,12 +86,6 @@ const SeparableVerbsSetup = () => {
         onToggle={toggleDifficulty}
       />
 
-      {/* Exercise Count Display */}
-      {totalExercises > 0 && (
-        <div className="text-center text-sm text-muted-foreground">
-          {totalExercises} exercise{totalExercises !== 1 ? "s" : ""} available
-        </div>
-      )}
     </ExerciseSetupLayout>
   );
 };

@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react"
 import { useNavigate } from "react-router-dom"
 import { Button } from "@/components/ui/button"
-import { ArrowLeft, PlayCircle, BarChart2, TrendingUp, RotateCcw, Filter } from "lucide-react"
+import { PlayCircle, BarChart2, TrendingUp, RotateCcw, Filter } from "lucide-react"
 import { reviewTracker } from "@/lib/reviewTracker"
 import { vocabularyData } from "@/data/vocabulary"
 import { exerciseStats } from "@/lib/exerciseStats"
@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
 import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
+import { AppHeader } from "@/components/AppHeader"
 
 const VocabularyStats = () => {
   const navigate = useNavigate()
@@ -22,7 +23,7 @@ const VocabularyStats = () => {
   const chapterIdToInfo = useMemo(() => {
     const map: Record<string, { title: string; number: number; wordsCount: number }> = {}
     for (const c of vocabularyData) {
-      map[c.id] = { title: c.title, number: c.chapter, wordsCount: c.words.length }
+      map[c.id] = { title: c.title, number: Number(c.chapter), wordsCount: c.words.length }
     }
     return map
   }, [])
@@ -34,19 +35,14 @@ const VocabularyStats = () => {
   const visibleCounts = showOnlyWrong ? counts : vocabularyData.map(c => ({ chapterId: c.id, count: counts.find(x => x.chapterId === c.id)?.count || 0 }))
 
   return (
-    <div className="min-h-screen bg-background pb-20 pt-6 px-4">
-      <div className="max-w-2xl mx-auto space-y-6">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <Button variant="ghost" size="icon" onClick={() => navigate('/exercises')}>
-              <ArrowLeft className="w-5 h-5" />
-            </Button>
-            <div className="space-y-2">
-              <h1 className="text-3xl font-bold">Statistics</h1>
-              <p className="text-muted-foreground">Your learning progress and statistics</p>
-            </div>
-          </div>
-        </div>
+    <div className="min-h-screen bg-background pb-20">
+      <AppHeader
+        title="Statistics"
+        fixed
+      />
+
+      <div className="max-w-2xl mx-auto space-y-6 px-4 pt-6">
+        <p className="text-muted-foreground text-center">Your learning progress and statistics</p>
 
         <Card>
           <CardHeader>

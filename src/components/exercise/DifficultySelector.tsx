@@ -52,13 +52,19 @@ export const DifficultySelector = ({
       >
         {difficulties.map((difficulty) => {
           const isSelected = selectedDifficulties.includes(difficulty.id);
+          const isDisabled = difficulty.count === 0;
           return (
             <SelectionCard
               key={difficulty.id}
               label={difficulty.label}
               description={`${difficulty.count} exercises`}
-              isSelected={isSelected}
-              onClick={() => onToggle(difficulty.id)}
+              isSelected={difficulty.count > 0 ? isSelected : false}
+              disabled={isDisabled}
+              onClick={() => {
+                if (!isDisabled) {
+                  onToggle(difficulty.id);
+                }
+              }}
             />
           );
         })}

@@ -9,7 +9,8 @@ import { hapticService } from "@/services/haptic";
 import { reviewTracker } from "@/lib/reviewTracker";
 import { exerciseStats } from "@/lib/exerciseStats";
 import { motion } from "framer-motion";
-import { ExerciseHeader, ExerciseProgress, ExerciseSummary } from "@/components/exercise";
+import { ExerciseProgress, ExerciseSummary } from "@/components/exercise";
+import { AppHeader } from "@/components/AppHeader";
 
 interface MatchPair {
   dutchWord: string;
@@ -199,7 +200,7 @@ const VocabularyMatch = () => {
 
   return (
     <div className="min-h-screen bg-background pb-20">
-      <ExerciseHeader
+      <AppHeader
         onBack={handleRestart}
         center={<ExerciseProgress current={currentTurn} total={5} variant="dots" />}
         right={<div className="text-sm font-medium">Turn {currentTurn + 1}/5</div>}

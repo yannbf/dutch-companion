@@ -3,11 +3,11 @@ import { useNavigate } from "react-router-dom";
 import { verbData, VerbCard } from "@/data/verbs";
 import { CardPile } from "@/components/CardPile";
 import { ProgressIndicator } from "@/components/ProgressIndicator";
-import { Button } from "@/components/ui/button";
-import { ArrowLeft, Volume2, ChevronDown } from "lucide-react";
+import { Volume2, ChevronDown } from "lucide-react";
 import { speakerService } from "@/services/speaker";
 import { createLocalStorageStore } from "@/lib/localStorage";
 import { ExerciseSummary } from "@/components/exercise";
+import { AppHeader } from "@/components/AppHeader";
 import {
   Collapsible,
   CollapsibleContent,
@@ -269,20 +269,15 @@ const Index = () => {
       <ProgressIndicator totalCards={currentSessionVerbs.length} results={results} />
       
       {/* Header */}
-      <div className="fixed top-0 left-0 right-0 z-40 bg-background/80 backdrop-blur-sm border-b border-border">
-        <div className="flex items-center justify-between px-4 h-14">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => navigate('/exercises/verbs')}
-          >
-            <ArrowLeft className="w-5 h-5" />
-          </Button>
-          
+      <AppHeader
+        backPath="/exercises/verbs"
+        blur
+        center={
           <div className="text-sm font-medium text-muted-foreground">
             {currentIndex + 1} / {currentSessionVerbs.length}
           </div>
-          
+        }
+        right={
           <div className={`text-sm font-medium min-w-[60px] text-right transition-colors duration-200 ${
             lastResult === "correct" 
               ? "text-green-500" 
@@ -292,8 +287,8 @@ const Index = () => {
           }`}>
             Score: {points}
           </div>
-        </div>
-      </div>
+        }
+      />
 
       <div className="flex-1 flex items-center justify-center pointer-events-none pt-14" style={{ touchAction: 'pan-x' }}>
         <div className="pointer-events-auto">

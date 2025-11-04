@@ -1,6 +1,5 @@
 import { useState, useMemo, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { vocabularyData, VocabularyWord } from "@/data/vocabulary";
 import { motion, useMotionValue, useTransform, PanInfo } from "framer-motion";
@@ -10,6 +9,7 @@ import { hapticService } from "@/services/haptic";
 import { createLocalStorageStore } from "@/lib/localStorage";
 import { reviewTracker } from "@/lib/reviewTracker";
 import { exerciseStats } from "@/lib/exerciseStats";
+import { AppHeader } from "@/components/AppHeader";
 
 interface WordResult {
   word: VocabularyWord;
@@ -174,21 +174,19 @@ const globalSettingsStore = createLocalStorageStore("taal-boost-global-settings"
         }))} 
       />
       
-      <div className="fixed top-4 left-4 right-4 flex items-center justify-between z-40">
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => navigate("/exercises/deofhet")}
-        >
-          <ArrowLeft className="w-5 h-5" />
-        </Button>
-        <div className="text-sm font-medium">
-          {currentIndex + 1} / {totalCards}
-        </div>
-        <div className="text-sm font-medium">
-          Score: {correctCount}
-        </div>
-      </div>
+      <AppHeader
+        backPath="/exercises/deofhet"
+        center={
+          <div className="text-sm font-medium">
+            {currentIndex + 1} / {totalCards}
+          </div>
+        }
+        right={
+          <div className="text-sm font-medium">
+            Score: {correctCount}
+          </div>
+        }
+      />
 
       {/* Floating DE and HET labels */}
       <div className="fixed top-1/2 left-8 -translate-y-1/2 z-30 pointer-events-none">

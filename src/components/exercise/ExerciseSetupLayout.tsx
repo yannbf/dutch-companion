@@ -1,7 +1,6 @@
 import { ReactNode } from "react";
-import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft } from "lucide-react";
+import { AppHeader } from "@/components/AppHeader";
 
 interface ExerciseSetupLayoutProps {
   /**
@@ -46,8 +45,6 @@ export const ExerciseSetupLayout = ({
   startButton,
   maxWidth = "2xl",
 }: ExerciseSetupLayoutProps) => {
-  const navigate = useNavigate();
-
   const maxWidthClasses = {
     sm: "max-w-sm",
     md: "max-w-md",
@@ -58,39 +55,35 @@ export const ExerciseSetupLayout = ({
   };
 
   return (
-    <div className="min-h-screen bg-background pb-20 pt-6 px-4">
-      <div className={`${maxWidthClasses[maxWidth]} mx-auto space-y-6`}>
+    <div className="min-h-screen bg-background pb-20">
+      <div className={`${maxWidthClasses[maxWidth]} mx-auto`}>
         {/* Header */}
-        <div className="flex items-center gap-4">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => navigate(backPath)}
-          >
-            <ArrowLeft className="w-5 h-5" />
-          </Button>
-          <div>
-            <h1 className="text-2xl font-bold">{title}</h1>
-            {subtitle && (
-              <p className="text-sm text-muted-foreground">{subtitle}</p>
-            )}
-          </div>
-        </div>
+        <AppHeader
+          title={title}
+          backPath={backPath}
+          fixed={false}
+        />
+        
+        {/* {subtitle && (
+          <p className="text-sm text-muted-foreground text-center">{subtitle}</p>
+        )} */}
 
         {/* Content */}
-        <div className="space-y-6">{children}</div>
+        <div className="space-y-6 pt-6 px-4">{children}</div>
 
-        {/* Start Button */}
-        {startButton && (
-          <Button
-            size="lg"
-            className="w-full"
-            onClick={startButton.onClick}
-            disabled={startButton.disabled}
-          >
-            {startButton.label}
-          </Button>
-        )}
+        <div className="flex px-4 pt-6">
+          {/* Start Button */}
+          {startButton && (
+            <Button
+              size="lg"
+              className="w-full"
+              onClick={startButton.onClick}
+              disabled={startButton.disabled}
+            >
+              {startButton.label}
+            </Button>
+          )}
+        </div>
       </div>
     </div>
   );
