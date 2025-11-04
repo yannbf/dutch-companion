@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Volume2 } from "lucide-react";
+import { Volume2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { vocabularyData, VocabularyWord } from "@/data/vocabulary";
 import { createLocalStorageStore } from "@/lib/localStorage";
@@ -9,6 +9,7 @@ import { hapticService } from "@/services/haptic";
 import { reviewTracker } from "@/lib/reviewTracker";
 import { exerciseStats } from "@/lib/exerciseStats";
 import { motion } from "framer-motion";
+import { ExerciseHeader, ExerciseProgress, ExerciseSummary } from "@/components/exercise";
 
 interface MatchPair {
   dutchWord: string;
@@ -172,56 +173,37 @@ const VocabularyMatch = () => {
   if (showSummary) {
     const totalMatches = turns.reduce((sum, turn) => sum + turn.length, 0);
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center px-4">
-        <motion.div
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          className="text-center space-y-6 max-w-md"
-        >
-          <h1 className="text-4xl font-bold">Excellent Work!</h1>
-          <p className="text-2xl">
-            You completed {currentTurn + 1} turn{currentTurn !== 0 ? 's' : ''}
-          </p>
-          <p className="text-lg text-muted-foreground">
-            {totalMatches} words matched
-          </p>
-          <div className="flex gap-4 justify-center">
-            <Button onClick={handleRestart}>Play Again</Button>
-            <Button variant="outline" onClick={() => navigate("/exercises")}>
-              Back to Exercises
-            </Button>
-          </div>
-        </motion.div>
-      </div>
+      <ExerciseSummary
+        score={totalMatches}
+        total={totalMatches}
+        title="Excellent Work!"
+        subtitle={`You completed ${currentTurn + 1} turn${currentTurn !== 0 ? 's' : ''}`}
+        actions={{
+          retry: {
+            label: "Play Again",
+            onClick: handleRestart,
+          },
+          home: {
+            label: "Back to Exercises",
+            onClick: () => navigate("/exercises"),
+          },
+        }}
+      >
+        <div className="text-center space-y-2">
+          <div className="text-6xl font-bold text-primary">{totalMatches}</div>
+          <p className="text-muted-foreground">words matched</p>
+        </div>
+      </ExerciseSummary>
     );
   }
 
   return (
     <div className="min-h-screen bg-background pb-20">
-      <div className="fixed top-0 left-0 right-0 bg-background border-b z-50 p-4">
-        <div className="flex items-center justify-between max-w-4xl mx-auto">
-          <Button variant="ghost" size="icon" onClick={handleRestart}>
-            <ArrowLeft className="w-5 h-5" />
-          </Button>
-          <div className="flex gap-2">
-            {[0, 1, 2, 3, 4].map((i) => (
-              <div
-                key={i}
-                className={`w-8 h-2 rounded-full transition-colors ${
-                  i < currentTurn
-                    ? 'bg-primary'
-                    : i === currentTurn
-                    ? 'bg-primary/50'
-                    : 'bg-muted'
-                }`}
-              />
-            ))}
-          </div>
-          <div className="text-sm font-medium">
-            Turn {currentTurn + 1}/5
-          </div>
-        </div>
-      </div>
+      <ExerciseHeader
+        onBack={handleRestart}
+        center={<ExerciseProgress current={currentTurn} total={5} variant="dots" />}
+        right={<div className="text-sm font-medium">Turn {currentTurn + 1}/5</div>}
+      />
 
       <div className="pt-24 px-4 max-w-4xl mx-auto">
         <div className="mb-6 text-center">

@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, Fragment } from "react";
+import { useState, useEffect, useRef, Fragment, useCallback } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -10,8 +10,7 @@ import { Volume2, Check, X, Keyboard } from "lucide-react";
 import { speakerService } from "@/services/speaker";
 import { hapticService } from "@/services/haptic";
 import { exerciseStats } from "@/lib/exerciseStats";
-
-const TOTAL_ROUNDS = 10;
+import { ExerciseProgress, ExerciseSummary, ScoreDisplay } from "@/components/exercise";
 
 type WordItem = { id: string; text: string };
 
@@ -22,6 +21,7 @@ const SeparableVerbs = () => {
   const [searchParams] = useSearchParams();
   const [currentRound, setCurrentRound] = useState(0);
   const [exercises, setExercises] = useState<SentenceBuilderExercise[]>([]);
+  const [totalRounds, setTotalRounds] = useState(10);
   const [currentExercise, setCurrentExercise] = useState<SentenceBuilderExercise | null>(null);
   const [userAnswer, setUserAnswer] = useState<WordItem[]>([]);
   const [availableWords, setAvailableWords] = useState<WordItem[]>([]);
@@ -40,23 +40,7 @@ const SeparableVerbs = () => {
   const [typedAnswer, setTypedAnswer] = useState("");
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
 
-  useEffect(() => {
-    const difficultiesParam = searchParams.get("difficulties") || "easy,medium,hard";
-    const selectedDifficulties = difficultiesParam.split(",");
-    const mode = (searchParams.get("mode") || "separable-verbs") as "separable-verbs" | "om-te";
-
-    const pool = mode === "separable-verbs" ? separableVerbs : omTeExercises;
-    const filtered = pool.filter((v) => selectedDifficulties.includes(v.difficulty));
-    const shuffled = [...filtered].sort(() => Math.random() - 0.5);
-    const selected = shuffled.slice(0, TOTAL_ROUNDS);
-
-    setExercises(selected);
-    if (selected.length > 0) {
-      initializeRound(selected[0]);
-    }
-  }, [searchParams]);
-
-  const initializeRound = (exercise: SentenceBuilderExercise) => {
+  const initializeRound = useCallback((exercise: SentenceBuilderExercise) => {
     setCurrentExercise(exercise);
     const items: WordItem[] = exercise.sentence.map((word, i) => ({
       id: `${word}-${i}-${Math.random().toString(36).slice(2, 8)}`,
@@ -67,7 +51,27 @@ const SeparableVerbs = () => {
     setUserAnswer([]);
     setIsCorrect(null);
     setWrongStreak(0);
-  };
+  }, []);
+
+  useEffect(() => {
+    const difficultiesParam = searchParams.get("difficulties") || "easy,medium,hard";
+    const selectedDifficulties = difficultiesParam.split(",");
+    const mode = (searchParams.get("mode") || "separable-verbs") as "separable-verbs" | "om-te";
+
+    const pool = mode === "separable-verbs" ? separableVerbs : omTeExercises;
+    const filtered = pool.filter((v) => selectedDifficulties.includes(v.difficulty));
+    const shuffled = [...filtered].sort(() => Math.random() - 0.5);
+    
+    // Take up to 10 exercises, or all available if less
+    const maxRounds = Math.min(10, filtered.length);
+    const selected = shuffled.slice(0, maxRounds);
+
+    setTotalRounds(maxRounds);
+    setExercises(selected);
+    if (selected.length > 0) {
+      initializeRound(selected[0]);
+    }
+  }, [searchParams, initializeRound]);
 
   useEffect(() => {
     if (isKeyboardMode) {
@@ -120,7 +124,7 @@ const SeparableVerbs = () => {
       );
       
       setTimeout(() => {
-        if (currentRound + 1 >= TOTAL_ROUNDS) {
+        if (currentRound + 1 >= totalRounds) {
           setShowResults(true);
         } else {
           setCurrentRound(currentRound + 1);
@@ -176,27 +180,38 @@ const SeparableVerbs = () => {
 
   if (showResults) {
     return (
-      <div className="min-h-screen bg-background pb-20 pt-6 px-4">
-        <div className="max-w-2xl mx-auto space-y-6">
-          <Card className="p-6 space-y-4">
-            <h2 className="text-2xl font-bold text-center">Results</h2>
-            <div className="text-center space-y-2">
-              <div className="text-6xl font-bold text-primary">
-                {score}/{TOTAL_ROUNDS}
-              </div>
-              <p className="text-muted-foreground">
-                {Math.round((score / TOTAL_ROUNDS) * 100)}% correct
-              </p>
-            </div>
-            <div className="flex gap-3">
-              <Button onClick={handleRestart} className="flex-1">
-                Practice Again
-              </Button>
-              <Button onClick={() => navigate("/exercises")} variant="outline" className="flex-1">
-                Back to Exercises
-              </Button>
-            </div>
-          </Card>
+      <ExerciseSummary
+        score={totalRounds}
+        total={totalRounds}
+        title="Excellent Work!"
+        subtitle={`You completed ${totalRounds} round${totalRounds !== 1 ? 's' : ''}`}
+        actions={{
+          retry: {
+            label: "Practice Again",
+            onClick: handleRestart,
+          },
+          home: {
+            label: "Back to Exercises",
+            onClick: () => navigate("/exercises"),
+          },
+        }}
+      >
+        <div className="text-center space-y-2">
+          <div className="text-6xl font-bold text-primary">{totalRounds}</div>
+          <p className="text-muted-foreground">exercises completed</p>
+        </div>
+      </ExerciseSummary>
+    );
+  }
+
+  if (!currentExercise && exercises.length === 0) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center px-4">
+        <div className="text-center space-y-4">
+          <p className="text-muted-foreground">No exercises available with the selected difficulties.</p>
+          <Button onClick={() => navigate("/exercises/separable-verbs")}>
+            Go Back
+          </Button>
         </div>
       </div>
     );
@@ -283,23 +298,20 @@ const SeparableVerbs = () => {
   return (
     <div className="min-h-screen bg-background pb-20 pt-6 px-4">
       <div className="max-w-2xl mx-auto space-y-6">
-        {/* Progress */}
+        {/* Progress Header */}
         <div className="flex items-center justify-between">
           <span className="text-sm font-medium">
-            Round {currentRound + 1}/{TOTAL_ROUNDS}
+            Round {currentRound + 1}/{totalRounds}
           </span>
-          <span className="text-sm font-medium">
-            Score: {score}
-          </span>
+          <ScoreDisplay score={score} variant="compact" animate={false} />
         </div>
 
         {/* Progress bar */}
-        <div className="w-full bg-secondary rounded-full h-2">
-          <div
-            className="bg-primary h-2 rounded-full transition-all duration-300"
-            style={{ width: `${((currentRound + 1) / TOTAL_ROUNDS) * 100}%` }}
-          />
-        </div>
+        <ExerciseProgress
+          current={currentRound}
+          total={totalRounds}
+          variant="bar"
+        />
 
         <Card className="p-6 space-y-4">
           <div className="flex items-center justify-between">

@@ -2,12 +2,17 @@ import { useState, useMemo, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { verbData, VerbCard } from "@/data/verbs";
 import { CardPile } from "@/components/CardPile";
-import { SummaryScreen } from "@/components/SummaryScreen";
 import { ProgressIndicator } from "@/components/ProgressIndicator";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Volume2, ChevronDown } from "lucide-react";
 import { speakerService } from "@/services/speaker";
 import { createLocalStorageStore } from "@/lib/localStorage";
+import { ExerciseSummary } from "@/components/exercise";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 
 interface VerbResult {
   verb: VerbCard;
@@ -53,6 +58,7 @@ const Index = () => {
   const [results, setResults] = useState<VerbResult[]>([]);
   const [sessionVerbs, setSessionVerbs] = useState<VerbCard[]>([]);
   const [lastResult, setLastResult] = useState<"correct" | "incorrect" | null>(null);
+  const [isDetailsOpen, setIsDetailsOpen] = useState(false);
   const lastSpeechTime = useRef<number>(0);
   const speechTimeout = useRef<NodeJS.Timeout | null>(null);
 
@@ -169,6 +175,8 @@ const Index = () => {
     setPoints(0);
     setResults([]);
     setLastResult(null);
+    setShowSummary(false);
+    setIsDetailsOpen(false);
     // Cancel any pending speech
     if (speechTimeout.current) {
       clearTimeout(speechTimeout.current);
@@ -181,15 +189,78 @@ const Index = () => {
     }
   };
 
+  const handleVerbClick = (verb: VerbCard, event: React.MouseEvent) => {
+    event.stopPropagation();
+    speakerService.speak(verb.infinitive);
+  };
+
   if (showSummary) {
     const correctAnswers = results.filter(result => result.correct).length;
+
     return (
-      <SummaryScreen
-        finalScore={correctAnswers}
-        totalCards={currentSessionVerbs.length}
-        onRestart={handleRestart}
-        results={results}
-      />
+      <ExerciseSummary
+        score={correctAnswers}
+        total={currentSessionVerbs.length}
+        title="Session Complete!"
+        actions={{
+          retry: {
+            label: "Practice Again",
+            onClick: handleRetry,
+          },
+          home: {
+            label: "Back to Setup",
+            onClick: handleRestart,
+          },
+        }}
+      >
+        {/* Custom detailed results section */}
+        <Collapsible open={isDetailsOpen} onOpenChange={setIsDetailsOpen} className="w-full">
+          <CollapsibleTrigger asChild>
+            <div className="bg-card border-2 border-primary rounded-2xl p-6 cursor-pointer relative hover:bg-card/80 transition-colors">
+              <div className="text-center">
+                <div className="text-6xl font-bold text-primary mb-2">
+                  {correctAnswers} / {currentSessionVerbs.length}
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  {Math.round((correctAnswers / currentSessionVerbs.length) * 100)}% correct
+                </p>
+              </div>
+              <ChevronDown
+                className={`w-6 h-6 transition-transform absolute top-4 right-4 text-muted-foreground ${
+                  isDetailsOpen ? "rotate-180" : ""
+                }`}
+              />
+              <CollapsibleContent className="mt-4">
+                <div className="border-t border-primary/20 pt-4 space-y-2 max-h-64 overflow-y-auto">
+                  {results.map((result, index) => (
+                    <div
+                      key={index}
+                      className="flex items-center justify-between p-3 bg-secondary/20 rounded-lg hover:bg-secondary/30 transition-colors"
+                    >
+                      <div className="flex items-center gap-3">
+                        <button
+                          className="p-1 hover:bg-secondary/50 rounded transition-colors"
+                          onClick={(e) => handleVerbClick(result.verb, e)}
+                        >
+                          <Volume2 className="w-4 h-4 text-muted-foreground" />
+                        </button>
+                        <span className="font-bold text-foreground">
+                          {result.verb.infinitive}
+                        </span>
+                      </div>
+                      <span
+                        className={`w-3 h-3 rounded-full ${
+                          result.correct ? "bg-green-500" : "bg-red-500"
+                        }`}
+                      />
+                    </div>
+                  ))}
+                </div>
+              </CollapsibleContent>
+            </div>
+          </CollapsibleTrigger>
+        </Collapsible>
+      </ExerciseSummary>
     );
   }
 

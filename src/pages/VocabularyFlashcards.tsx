@@ -3,13 +3,19 @@ import { vocabularyData } from "@/data/vocabulary";
 import type { VocabularyWord } from "@/data/types";
 import { SwipeableCardPile, CardContent } from "@/components/SwipeableCardPile";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, RotateCcw, BarChart2 } from "lucide-react";
+import { ArrowLeft, RotateCcw, BarChart2, Volume2, ChevronDown } from "lucide-react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { speakerService } from "@/services/speaker";
 import { ReactNode } from "react";
 import { createLocalStorageStore } from "@/lib/localStorage";
 import { reviewTracker } from "@/lib/reviewTracker";
 import { exerciseStats } from "@/lib/exerciseStats";
+import { ExerciseSummary } from "@/components/exercise";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 
 // Convert VocabularyWord to generic CardContent format
 const createVocabularyCardContent = (word: VocabularyWord, flipped: boolean): CardContent => ({
@@ -169,6 +175,7 @@ const VocabularyFlashcards = () => {
   const [showSummary, setShowSummary] = useState(false);
   const [voiceMode, setVoiceMode] = useState(true);
   const [flippedMode, setFlippedMode] = useState<boolean>(() => flippedModeStore.get());
+  const [isDetailsOpen, setIsDetailsOpen] = useState(false);
   const { getFavoriteWords } = useFavorites();
   const lastSpeechTime = useRef<number>(0);
   const speechTimeout = useRef<NodeJS.Timeout | null>(null);
@@ -204,7 +211,7 @@ const VocabularyFlashcards = () => {
 
     if (selectedChapters.length > 0) {
       normalWords.push(...vocabularyData
-        .filter((item) => selectedChapters.includes(item.chapter))
+        .filter((item) => selectedChapters.includes(Number(item.chapter)))
         .flatMap((chapter) => chapter.words));
     }
 
@@ -363,6 +370,12 @@ const VocabularyFlashcards = () => {
     setPoints(0);
     setResults([]);
     setShowSummary(false);
+    setIsDetailsOpen(false);
+  };
+
+  const handleWordClick = (word: string, event: React.MouseEvent) => {
+    event.stopPropagation();
+    speakerService.speak(word);
   };
 
   if (!gameStarted) {
@@ -385,11 +398,12 @@ const VocabularyFlashcards = () => {
             <div>
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
                 {vocabularyData.map((chapter) => {
-                  const isSelected = selectedChapters.includes(chapter.chapter);
+                  const chapterNum = Number(chapter.chapter);
+                  const isSelected = selectedChapters.includes(chapterNum);
                   return (
                     <button
                       key={chapter.chapter}
-                      onClick={() => handleChapterToggle(chapter.chapter)}
+                      onClick={() => handleChapterToggle(chapterNum)}
                       className={`
                         relative p-4 rounded-lg border-2 transition-all text-left
                         active:scale-95 touch-manipulation
@@ -482,20 +496,77 @@ const VocabularyFlashcards = () => {
   if (showSummary) {
     const correctAnswers = results.filter((r) => r.correct).length;
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center px-4">
-        <div className="text-center space-y-6 max-w-md">
-          <h1 className="text-4xl font-bold">Great work!</h1>
-          <p className="text-2xl">
-            Score: {correctAnswers} / {sessionWords.length}
-          </p>
-          <div className="flex gap-4 justify-center">
-            <Button onClick={handleRetry}>Try Again</Button>
-            <Button variant="outline" onClick={handleRestart}>
-              Go back
-            </Button>
-          </div>
-        </div>
-      </div>
+      <ExerciseSummary
+        score={correctAnswers}
+        total={sessionWords.length}
+        title="Session Complete!"
+        actions={{
+          retry: {
+            label: "Try Again",
+            onClick: handleRetry,
+          },
+          home: {
+            label: "Go back",
+            onClick: handleRestart,
+          },
+        }}
+      >
+        {/* Custom detailed results section */}
+        <Collapsible open={isDetailsOpen} onOpenChange={setIsDetailsOpen} className="w-full">
+          <CollapsibleTrigger asChild>
+            <div className="bg-card border-2 border-primary rounded-2xl p-6 cursor-pointer relative hover:bg-card/80 transition-colors">
+              <div className="text-center">
+                <div className="text-6xl font-bold text-primary mb-2">
+                  {correctAnswers} / {sessionWords.length}
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  {Math.round((correctAnswers / sessionWords.length) * 100)}% correct
+                </p>
+              </div>
+              <ChevronDown
+                className={`w-6 h-6 transition-transform absolute top-4 right-4 text-muted-foreground ${
+                  isDetailsOpen ? "rotate-180" : ""
+                }`}
+              />
+              <CollapsibleContent className="mt-4">
+                <div className="border-t border-primary/20 pt-4 space-y-2 max-h-64 overflow-y-auto">
+                  {results.map((result, index) => {
+                    const word = sessionWords.find(w => w.word === result.word);
+                    return (
+                      <div
+                        key={index}
+                        className="flex items-center justify-between p-3 bg-secondary/20 rounded-lg hover:bg-secondary/30 transition-colors"
+                      >
+                        <div className="flex items-center gap-3 flex-1 min-w-0">
+                          <button
+                            className="p-1 hover:bg-secondary/50 rounded transition-colors shrink-0"
+                            onClick={(e) => handleWordClick(result.word, e)}
+                          >
+                            <Volume2 className="w-4 h-4 text-muted-foreground" />
+                          </button>
+                          <div className="flex flex-col min-w-0 flex-1">
+                            <span className="font-bold text-foreground truncate">
+                              {word?.article ? `${word.article} ` : ''}{result.word}
+                            </span>
+                            <span className="text-xs text-muted-foreground truncate">
+                              {word?.translation}
+                            </span>
+                          </div>
+                        </div>
+                        <span
+                          className={`w-3 h-3 rounded-full shrink-0 ml-2 ${
+                            result.correct ? "bg-green-500" : "bg-red-500"
+                          }`}
+                        />
+                      </div>
+                    );
+                  })}
+                </div>
+              </CollapsibleContent>
+            </div>
+          </CollapsibleTrigger>
+        </Collapsible>
+      </ExerciseSummary>
     );
   }
 
