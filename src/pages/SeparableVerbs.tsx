@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { separableVerbs, SeparableVerbExercise } from "@/data/separableVerbs";
 import { omTeExercises, SentenceExercise } from "@/data/omTe";
 import { motion, AnimatePresence } from "framer-motion";
-import { Volume2, Check, X, RotateCcw } from "lucide-react";
+import { Volume2, Check, X, RotateCcw, Keyboard } from "lucide-react";
 import { speakerService } from "@/services/speaker";
 import { hapticService } from "@/services/haptic";
 import { exerciseStats } from "@/lib/exerciseStats";
@@ -27,6 +27,9 @@ const SeparableVerbs = () => {
   const [score, setScore] = useState(0);
   const [showResults, setShowResults] = useState(false);
   const [selectedWordIndex, setSelectedWordIndex] = useState<number | null>(null);
+  const [isKeyboardMode, setIsKeyboardMode] = useState(false);
+  const [typedAnswer, setTypedAnswer] = useState("");
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
   const lastTapRef = useRef<{ wordId: string; time: number } | null>(null);
 
   const initializeRound = useCallback((exercise: SentenceBuilderExercise) => {
@@ -40,6 +43,10 @@ const SeparableVerbs = () => {
     setUserAnswer([]);
     setIsCorrect(null);
     setSelectedWordIndex(null);
+    setTypedAnswer("");
+    if (textareaRef.current) {
+      textareaRef.current.focus();
+    }
   }, []);
 
   useEffect(() => {
@@ -63,9 +70,14 @@ const SeparableVerbs = () => {
   }, [searchParams, initializeRound]);
 
   const handleWordClick = (item: WordItem, from: "available" | "answer", index?: number) => {
+    if (isKeyboardMode) return;
     hapticService.light();
     
     if (from === "available") {
+      // Check if word is already in answer to prevent duplicates
+      const alreadyInAnswer = userAnswer.some(w => w.id === item.id);
+      if (alreadyInAnswer) return;
+      
       // Add to answer
       setAvailableWords((w) => w.filter((x) => x.id !== item.id));
       setUserAnswer((a) => [...a, item]);
@@ -117,10 +129,14 @@ const SeparableVerbs = () => {
     if (!currentExercise) return;
 
     const expected = currentExercise.sentence.join(" ");
-    const user = userAnswer.map((i) => i.text).join(" ");
-    if (userAnswer.length !== currentExercise.sentence.length) return;
+    const user = isKeyboardMode 
+      ? typedAnswer.trim() 
+      : userAnswer.map((i) => i.text).join(" ");
+    
+    if (!isKeyboardMode && userAnswer.length !== currentExercise.sentence.length) return;
+    if (isKeyboardMode && !typedAnswer.trim()) return;
 
-    const correct = user === expected;
+    const correct = normalizeForCompare(user) === normalizeForCompare(expected);
     setIsCorrect(correct);
     
     if (correct) {
@@ -140,7 +156,7 @@ const SeparableVerbs = () => {
           setCurrentRound(currentRound + 1);
           initializeRound(exercises[currentRound + 1]);
         }
-      }, 2000);
+      }, 1500);
     } else {
       hapticService.medium();
       exerciseStats.recordAttempt(
@@ -154,12 +170,19 @@ const SeparableVerbs = () => {
 
   const handleReset = () => {
     if (currentExercise) {
-      setUserAnswer([]);
-      const items: WordItem[] = currentExercise.sentence.map((word, i) => ({
-        id: `${word}-${i}-${Math.random().toString(36).slice(2, 8)}`,
-        text: word,
-      }));
-      setAvailableWords([...items].sort(() => Math.random() - 0.5));
+      if (isKeyboardMode) {
+        setTypedAnswer("");
+        if (textareaRef.current) {
+          textareaRef.current.focus();
+        }
+      } else {
+        setUserAnswer([]);
+        const items: WordItem[] = currentExercise.sentence.map((word, i) => ({
+          id: `${word}-${i}-${Math.random().toString(36).slice(2, 8)}`,
+          text: word,
+        }));
+        setAvailableWords([...items].sort(() => Math.random() - 0.5));
+      }
       setIsCorrect(null);
       setSelectedWordIndex(null);
     }
@@ -227,8 +250,12 @@ const SeparableVerbs = () => {
     );
   }
 
-  const canCheck = userAnswer.length === currentExercise.sentence.length && isCorrect === null;
-  const canReset = userAnswer.length > 0 && isCorrect === null;
+  const canCheck = isKeyboardMode 
+    ? typedAnswer.trim().length > 0 && isCorrect === null
+    : userAnswer.length === currentExercise.sentence.length && isCorrect === null;
+  const canReset = isKeyboardMode 
+    ? typedAnswer.length > 0 && isCorrect === null
+    : userAnswer.length > 0 && isCorrect === null;
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
@@ -242,115 +269,117 @@ const SeparableVerbs = () => {
         right={<ScoreDisplay score={score} variant="compact" animate={false} />}
       />
       
-      <div className="flex-1 flex flex-col px-4 pt-20 pb-6 max-w-2xl mx-auto w-full">
-        {/* Progress bar */}
-        <div className="mb-6">
-          <ExerciseProgress
-            current={currentRound}
-            total={totalRounds}
-            variant="bar"
-          />
-        </div>
-
-        {/* Verb info card - Now at top for emphasis */}
+      <div className="flex-1 flex flex-col px-4 pt-16 pb-6 max-w-2xl mx-auto w-full">
+        {/* Verb info - smaller and more subtle */}
         {"verb" in currentExercise && (
           <motion.div 
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="mb-6 p-4 rounded-2xl bg-gradient-to-br from-primary/20 to-primary/5 border-2 border-primary/30"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.15 }}
+            className="mb-4 py-2 px-3 rounded-lg bg-primary/10 border border-primary/20 inline-flex items-center gap-2 self-start"
           >
-            <div className="text-center">
-              <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">
-                Separable Verb
-              </p>
-              <p className="text-2xl font-bold text-primary mb-1">
-                {currentExercise.verb}
-              </p>
-              <p className="text-sm text-muted-foreground">
-                {currentExercise.conjugatedVerb} + {currentExercise.prefix}
-              </p>
-            </div>
+            <span className="text-sm font-bold text-primary">
+              {currentExercise.verb}
+            </span>
+            <span className="text-xs text-muted-foreground">
+              ({currentExercise.conjugatedVerb} + {currentExercise.prefix})
+            </span>
           </motion.div>
         )}
 
         {/* Question */}
         <div className="mb-6">
-          <div className="flex items-start justify-between gap-3 mb-4">
+          <div className="flex items-start justify-between gap-3">
             <div className="flex-1">
-              <h3 className="text-xl font-bold mb-2">
+              <h3 className="text-lg font-bold mb-2">
                 Form the sentence in Dutch
               </h3>
               <p className="text-base text-muted-foreground">
                 {currentExercise.translation}
               </p>
             </div>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={handlePlayAudio}
-              className="shrink-0 h-10 w-10 rounded-full"
-            >
-              <Volume2 className="w-5 h-5" />
-            </Button>
+            <div className="flex gap-2 shrink-0">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setIsKeyboardMode(!isKeyboardMode)}
+                className={`h-9 w-9 rounded-full ${isKeyboardMode ? 'bg-primary/20' : ''}`}
+              >
+                <Keyboard className="w-4 h-4" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={handlePlayAudio}
+                className="h-9 w-9 rounded-full"
+              >
+                <Volume2 className="w-4 h-4" />
+              </Button>
+            </div>
           </div>
         </div>
 
         {/* User's answer area */}
-        <div className="mb-6 flex-1 flex flex-col justify-center min-h-[140px]">
-          <AnimatePresence mode="wait">
-            {userAnswer.length === 0 ? (
-              <motion.div
-                key="empty"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                className="flex items-center justify-center h-full min-h-[100px] border-2 border-dashed border-border rounded-2xl"
-              >
-                <p className="text-muted-foreground text-center px-4">
-                  Tap words below to build your sentence
-                </p>
-              </motion.div>
-            ) : (
-              <motion.div
-                key="answer"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                className="flex flex-wrap gap-2 p-4 bg-card/50 rounded-2xl border border-border min-h-[100px] items-center justify-center"
-              >
-                {userAnswer.map((item, index) => (
-                  <motion.button
-                    key={item.id}
-                    layout
-                    initial={{ scale: 0.8, opacity: 0 }}
-                    animate={{ scale: 1, opacity: 1 }}
-                    exit={{ scale: 0.8, opacity: 0 }}
-                    whileTap={{ scale: 0.95 }}
-                    onClick={() => handleWordClick(item, "answer", index)}
-                    className={`
-                      px-5 py-3 rounded-xl font-semibold text-base
-                      transition-all touch-manipulation
-                      ${selectedWordIndex === index
-                        ? "bg-primary text-primary-foreground ring-4 ring-primary/30 scale-105"
-                        : "bg-primary/90 text-primary-foreground hover:bg-primary"
-                      }
-                    `}
-                  >
-                    {item.text}
-                  </motion.button>
-                ))}
-              </motion.div>
-            )}
-          </AnimatePresence>
-          
-          {selectedWordIndex !== null && (
-            <motion.p
-              initial={{ opacity: 0, y: -5 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="text-sm text-muted-foreground text-center mt-3"
-            >
-              Tap another word to swap • Double-tap to remove
-            </motion.p>
+        <div className="mb-6">
+          {isKeyboardMode ? (
+            <div className="space-y-2">
+              <textarea
+                ref={textareaRef}
+                value={typedAnswer}
+                onChange={(e) => setTypedAnswer(e.target.value)}
+                placeholder="Type your answer here..."
+                className="w-full px-4 py-3 rounded-xl border-2 border-border bg-background text-base resize-none focus:outline-none focus:border-primary min-h-[80px]"
+                disabled={isCorrect !== null}
+              />
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {/* Answer lines - Duolingo style */}
+              <div className="min-h-[120px] py-2">
+                {userAnswer.length === 0 ? (
+                  <div className="space-y-3">
+                    {[...Array(Math.min(3, currentExercise.sentence.length))].map((_, i) => (
+                      <div key={i} className="h-[2px] bg-border rounded-full" />
+                    ))}
+                  </div>
+                ) : (
+                  <div className="flex flex-wrap gap-2">
+                    <AnimatePresence mode="popLayout">
+                      {userAnswer.map((item, index) => (
+                        <motion.button
+                          key={item.id}
+                          layout
+                          initial={{ scale: 0.8, opacity: 0 }}
+                          animate={{ 
+                            scale: selectedWordIndex === index ? 1.05 : 1, 
+                            opacity: 1 
+                          }}
+                          exit={{ scale: 0.8, opacity: 0 }}
+                          transition={{ 
+                            type: "spring", 
+                            stiffness: 500, 
+                            damping: 30,
+                            mass: 0.5
+                          }}
+                          whileTap={{ scale: 0.95 }}
+                          onClick={() => handleWordClick(item, "answer", index)}
+                          className={`
+                            px-4 py-2.5 rounded-xl font-medium text-base
+                            transition-colors duration-100 touch-manipulation
+                            ${selectedWordIndex === index
+                              ? "bg-primary text-primary-foreground ring-2 ring-primary/50"
+                              : "bg-card border-2 border-border hover:border-primary/50"
+                            }
+                          `}
+                        >
+                          {item.text}
+                        </motion.button>
+                      ))}
+                    </AnimatePresence>
+                  </div>
+                )}
+              </div>
+            </div>
           )}
         </div>
 
@@ -358,11 +387,12 @@ const SeparableVerbs = () => {
         <AnimatePresence>
           {isCorrect !== null && (
             <motion.div
-              initial={{ opacity: 0, y: 20, scale: 0.95 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: -20, scale: 0.95 }}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.15 }}
               className={`
-                mb-6 p-5 rounded-2xl flex items-center gap-4 font-semibold
+                mb-4 p-4 rounded-xl flex items-center gap-3 font-semibold
                 ${isCorrect
                   ? "bg-success/10 text-success border-2 border-success/30"
                   : "bg-destructive/10 text-destructive border-2 border-destructive/30"
@@ -370,16 +400,16 @@ const SeparableVerbs = () => {
               `}
             >
               <div className={`
-                w-10 h-10 rounded-full flex items-center justify-center shrink-0
+                w-8 h-8 rounded-full flex items-center justify-center shrink-0
                 ${isCorrect ? "bg-success" : "bg-destructive"}
               `}>
                 {isCorrect ? (
-                  <Check className="w-6 h-6 text-white" />
+                  <Check className="w-5 h-5 text-white" />
                 ) : (
-                  <X className="w-6 h-6 text-white" />
+                  <X className="w-5 h-5 text-white" />
                 )}
               </div>
-              <span className="text-base">
+              <span className="text-sm">
                 {isCorrect ? "Perfect! Well done!" : "Not quite right. Try again!"}
               </span>
             </motion.div>
@@ -387,52 +417,58 @@ const SeparableVerbs = () => {
         </AnimatePresence>
 
         {/* Available words */}
-        <div className="space-y-3 mb-6">
-          <p className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
-            Available Words
-          </p>
-          <div className="flex flex-wrap gap-2">
-            <AnimatePresence>
-              {availableWords.map((item) => (
-                <motion.button
-                  key={item.id}
-                  layout
-                  initial={{ scale: 0.8, opacity: 0 }}
-                  animate={{ scale: 1, opacity: 1 }}
-                  exit={{ scale: 0.8, opacity: 0 }}
-                  whileTap={{ scale: 0.95 }}
-                  onClick={() => handleWordClick(item, "available")}
-                  className="px-5 py-3 rounded-xl font-semibold text-base
-                    bg-card border-2 border-border
-                    hover:border-primary/50 active:bg-card/80
-                    transition-all touch-manipulation"
-                >
-                  {item.text}
-                </motion.button>
-              ))}
-            </AnimatePresence>
+        {!isKeyboardMode && (
+          <div className="space-y-2 mb-6">
+            <div className="flex flex-wrap gap-2">
+              <AnimatePresence mode="popLayout">
+                {availableWords.map((item) => (
+                  <motion.button
+                    key={item.id}
+                    layout
+                    initial={{ scale: 0.8, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    exit={{ scale: 0.8, opacity: 0 }}
+                    transition={{ 
+                      type: "spring", 
+                      stiffness: 500, 
+                      damping: 30,
+                      mass: 0.5
+                    }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={() => handleWordClick(item, "available")}
+                    className="px-4 py-2.5 rounded-xl font-medium text-base
+                      bg-card border-2 border-border
+                      hover:border-primary/50 active:bg-card/80
+                      transition-colors duration-100 touch-manipulation"
+                  >
+                    {item.text}
+                  </motion.button>
+                ))}
+              </AnimatePresence>
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Action buttons */}
-        <div className="flex gap-3 mt-auto">
+        <div className="flex gap-3 mt-auto pt-4">
           <Button
             onClick={handleCheck}
             disabled={!canCheck}
-            className="flex-1 h-14 text-base font-bold rounded-xl"
+            className="flex-1 h-12 text-base font-bold rounded-xl"
             size="lg"
           >
-            Check Answer
+            Check
           </Button>
-          <Button
-            onClick={handleReset}
-            variant="outline"
-            disabled={!canReset}
-            className="h-14 px-6 rounded-xl"
-            size="lg"
-          >
-            <RotateCcw className="w-5 h-5" />
-          </Button>
+          {canReset && (
+            <Button
+              onClick={handleReset}
+              variant="outline"
+              className="h-12 px-5 rounded-xl"
+              size="lg"
+            >
+              <RotateCcw className="w-4 h-4" />
+            </Button>
+          )}
         </div>
       </div>
     </div>
