@@ -45,7 +45,7 @@ const VocabularyMatch = () => {
 
     if (selectedChapters.length > 0) {
       words.push(...levelVocabulary
-        .filter((item) => selectedChapters.includes(item.chapter))
+        .filter((item) => selectedChapters.includes(Number(item.chapter)))
         .flatMap((chapter) => chapter.words));
     }
 
