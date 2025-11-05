@@ -145,7 +145,7 @@ const Settings = () => {
             <div className="flex items-center justify-between">
               <div className="space-y-0.5">
                 <Label className="text-base font-semibold">Clear All Data</Label>
-                <p className="text-sm text-muted-foreground">Reset all settings, favorites, and progress</p>
+                <p className="text-sm text-muted-foreground">Reset settings, favorites, and progress</p>
               </div>
               <AlertDialog>
                 <AlertDialogTrigger asChild>

@@ -44,6 +44,27 @@ const SeparableVerbs = () => {
   const longPressTimerRef = useRef<NodeJS.Timeout | null>(null);
   const longPressTriggeredRef = useRef(false);
 
+  // Helper function to initialize a round
+  const initializeRound = (exercise: SentenceBuilderExercise) => {
+    setCurrentExercise(exercise);
+    const items: WordItem[] = exercise.sentence.map((word, i) => ({
+      id: `${word}-${i}-${Math.random().toString(36).slice(2, 8)}`,
+      text: word,
+      originalIndex: i,
+      isSelected: false,
+    }));
+    const shuffledItems = [...items].sort(() => Math.random() - 0.5).map((item, idx) => ({
+      ...item,
+      originalIndex: idx,
+    }));
+    setAvailableWords(shuffledItems);
+    setUserAnswer([]);
+    setIsCorrect(null);
+    setSelectedWordIndex(null);
+    setTypedAnswer("");
+    setShowSuccessButton(false);
+  };
+
   // Speech recognition hook
   const {
     isListening,
@@ -72,29 +93,6 @@ const SeparableVerbs = () => {
   }, [isKeyboardMode, isListening, speechReady, stopListening]);
 
 
-  const initializeRound = useCallback((exercise: SentenceBuilderExercise) => {
-    setCurrentExercise(exercise);
-    const items: WordItem[] = exercise.sentence.map((word, i) => ({
-      id: `${word}-${i}-${Math.random().toString(36).slice(2, 8)}`,
-      text: word,
-      originalIndex: i,
-      isSelected: false,
-    }));
-    const shuffled = [...items].sort(() => Math.random() - 0.5).map((item, idx) => ({
-      ...item,
-      originalIndex: idx, // Use shuffled position as original index
-    }));
-    setAvailableWords(shuffled);
-    setUserAnswer([]);
-    setIsCorrect(null);
-    setSelectedWordIndex(null);
-    setTypedAnswer("");
-    setShowSuccessButton(false);
-    // Refocus if user was actively typing
-    if (wasInputFocused && textareaRef.current) {
-      textareaRef.current.focus();
-    }
-  }, [wasInputFocused]);
 
   useEffect(() => {
     const difficultiesParam = searchParams.get("difficulties") || "easy,medium,hard";
@@ -114,7 +112,7 @@ const SeparableVerbs = () => {
     if (selected.length > 0) {
       initializeRound(selected[0]);
     }
-  }, [searchParams, initializeRound, wasInputFocused]);
+  }, [searchParams]);
 
   const handleWordPressStart = (item: WordItem, from: "available" | "answer", index?: number) => {
     if (isKeyboardMode) return;
@@ -286,6 +284,14 @@ const SeparableVerbs = () => {
     }
   };
 
+  // Auto-resize textarea when content changes
+  useEffect(() => {
+    if (textareaRef.current) {
+      textareaRef.current.style.height = 'auto'; // Reset height
+      textareaRef.current.style.height = `${textareaRef.current.scrollHeight}px`; // Grow to fit
+    }
+  }, [typedAnswer]);
+
   // Play sound when speech recognition becomes ready (skip on mobile)
   useEffect(() => {
     if (speechReady) {
@@ -414,55 +420,44 @@ const SeparableVerbs = () => {
         <div className="mb-8">
           {isKeyboardMode ? (
             <div className="space-y-4">
-              {/* Custom textarea with ghost text support */}
-              <div className="relative">
-                <div
-                  className={`w-full px-4 py-3 rounded-xl border-2 resize-none min-h-[80px] touch-auto whitespace-pre-wrap break-words ${isCorrect === true
-                      ? 'border-muted bg-muted text-muted-foreground cursor-not-allowed'
-                      : 'border-border bg-background text-foreground focus-within:border-primary'
+              {/* Input area */}
+              <div className="space-y-2">
+                {/* Textarea for input */}
+                <textarea
+                  ref={textareaRef}
+                  value={typedAnswer}
+                  onChange={(e) => {
+                    setTypedAnswer(e.target.value);
+                    // Clear interim transcript when user starts typing
+                    if (interimTranscript) {
+                      stopListening();
+                    }
+                  }}
+                  onFocus={() => {
+                    setWasInputFocused(true);
+                    // Stop speech recognition when user focuses on input
+                    if (isListening || speechReady) {
+                      stopListening();
+                    }
+                  }}
+                  onBlur={() => {
+                    setWasInputFocused(false);
+                  }}
+                  placeholder="Type your answer here..."
+                  className={`w-full px-4 py-3 rounded-xl border-2 resize-none min-h-[80px] touch-auto ${isCorrect === true
+                    ? 'border-muted bg-muted text-muted-foreground cursor-not-allowed'
+                    : 'border-border bg-background text-foreground focus:border-primary focus:outline-none'
                     }`}
                   style={{
                     fontSize: '16px', // Prevents zoom on iOS
                     lineHeight: '1.5',
+                    overflow: 'hidden',
+                    // Optionally set maxHeight if desired, e.g., maxHeight: '250px'
                   }}
-                >
-                  {/* Typed text */}
-                  <span className="text-foreground">{typedAnswer}</span>
-                  {/* Ghost interim text */}
-                  {interimTranscript && (
-                    <span className="text-muted-foreground/60 italic opacity-70">
-                      {typedAnswer ? ' ' : ''}{interimTranscript}
-                    </span>
-                  )}
-                  {/* Invisible textarea for input handling */}
-                  <textarea
-                    ref={textareaRef}
-                    value={typedAnswer}
-                    onChange={(e) => {
-                      setTypedAnswer(e.target.value);
-                      // Clear interim transcript when user starts typing
-                      if (interimTranscript) {
-                        stopListening();
-                      }
-                    }}
-                    onFocus={() => {
-                      setWasInputFocused(true);
-                      // Stop speech recognition when user focuses on input
-                      if (isListening || speechReady) {
-                        stopListening();
-                      }
-                    }}
-                    onBlur={() => {
-                      setWasInputFocused(false);
-                    }}
-                    placeholder={typedAnswer || interimTranscript ? "" : "Type your answer here..."}
-                    className="absolute inset-0 w-full h-full px-4 py-3 bg-transparent border-0 resize-none text-foreground caret-black focus:outline-none min-h-[80px] touch-auto"
-                    disabled={isCorrect === true}
-                  />
-                </div>
+                  rows={1}
+                  disabled={isCorrect === true}
+                />
               </div>
-
-
             </div>
           ) : (
             <div className="space-y-3">
@@ -564,8 +559,8 @@ const SeparableVerbs = () => {
               <Button
                 onClick={handleCheck}
                 className={`w-full h-12 text-base font-bold rounded-xl transition-colors duration-300 ${showSuccessButton
-                    ? 'bg-green-500 hover:bg-green-500/90 text-white !opacity-100'
-                    : ''
+                  ? 'bg-green-500 hover:bg-green-500/90 text-white !opacity-100'
+                  : ''
                   }`}
                 size="lg"
                 disabled={showSuccessButton}
@@ -601,14 +596,21 @@ const SeparableVerbs = () => {
               <RotateCcw className="w-4 h-4" />
             </Button>
           </div>
-
           {/* Microphone button - only in keyboard mode */}
           {isKeyboardMode && (
             <div
               className="w-full flex justify-center fixed left-0 right-0 pointer-events-none z-40"
               style={{ bottom: "calc(env(safe-area-inset-bottom, 0px) + 96px)" }}
             >
-              <div className="pointer-events-auto">
+              <div className="pointer-events-auto flex flex-col items-center">
+
+                {/* Interim text preview */}
+                {interimTranscript && (
+                  <div className="px-4 mx-4 mb-2 py-2 text-sm text-muted-foreground/70 italic opacity-70 bg-muted/50 rounded-lg">
+                    "{interimTranscript}"
+                  </div>
+                )}
+
                 <SpeechRecognitionButton
                   isListening={isListening}
                   speechReady={speechReady}

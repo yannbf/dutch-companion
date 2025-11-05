@@ -39,7 +39,7 @@ export function useSpeechRecognition(
 ): UseSpeechRecognitionReturn {
   const {
     lang = 'nl-NL',
-    continuous = false, // Default: false (stops when user stops talking)
+    continuous = true, // Default: false (stops when user stops talking)
     interimResults = true,
     onResult,
     onError,
