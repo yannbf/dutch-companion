@@ -333,7 +333,7 @@ const SeparableVerbs = () => {
             transition={{ duration: 0.15 }}
             className="mb-4 py-2 px-3 rounded-lg bg-primary/10 border border-primary/20 inline-flex items-center gap-2 self-center"
           >
-            <span className="text-sm font-bold text-primary">
+            <span className="text-sm font-bold text-primary uppercase">
               {currentExercise.verb}
             </span>
             <span className="text-xs text-muted-foreground">
