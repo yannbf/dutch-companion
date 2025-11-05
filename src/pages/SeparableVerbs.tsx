@@ -437,8 +437,14 @@ const SeparableVerbs = () => {
                   {/* Invisible textarea for input handling */}
                   <textarea
                     ref={textareaRef}
-                    value=""
-                    onChange={() => { }} // Handled by the visible text above
+                    value={typedAnswer}
+                    onChange={(e) => {
+                      setTypedAnswer(e.target.value);
+                      // Clear interim transcript when user starts typing
+                      if (interimTranscript) {
+                        stopListening();
+                      }
+                    }}
                     onFocus={() => {
                       setWasInputFocused(true);
                       // Stop speech recognition when user focuses on input
@@ -450,7 +456,7 @@ const SeparableVerbs = () => {
                       setWasInputFocused(false);
                     }}
                     placeholder={typedAnswer || interimTranscript ? "" : "Type your answer here..."}
-                    className="absolute inset-0 w-full h-full px-4 py-3 bg-transparent border-0 resize-none text-transparent caret-black focus:outline-none min-h-[80px] touch-auto"
+                    className="absolute inset-0 w-full h-full px-4 py-3 bg-transparent border-0 resize-none text-foreground caret-black focus:outline-none min-h-[80px] touch-auto"
                     disabled={isCorrect === true}
                   />
                 </div>
