@@ -1,10 +1,10 @@
 import { SelectionCard } from "./SelectionCard";
 
 export interface ChapterItem {
-  id: number;
-  chapter: number;
+  id: number | string;
+  chapter: number | string;
   title: string;
-  words: any[];
+  words: unknown[];
 }
 
 interface ChapterSelectorProps {
@@ -41,14 +41,15 @@ export const ChapterSelector = ({
       {title && <h2 className="text-lg font-semibold">{title}</h2>}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
         {chapters.map((chapter) => {
-          const isSelected = selectedChapters.includes(chapter.chapter);
+          const chapterNum = Number(chapter.chapter);
+          const isSelected = selectedChapters.includes(chapterNum);
           return (
             <SelectionCard
               key={chapter.chapter}
               label={`Chapter ${chapter.chapter}`}
               description={`${chapter.title} (${chapter.words.length} words)`}
               isSelected={isSelected}
-              onClick={() => onToggle(chapter.chapter)}
+              onClick={() => onToggle(chapterNum)}
             />
           );
         })}

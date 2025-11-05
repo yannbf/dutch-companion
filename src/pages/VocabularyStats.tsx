@@ -1,9 +1,9 @@
 import { useMemo, useState } from "react"
 import { useNavigate } from "react-router-dom"
 import { Button } from "@/components/ui/button"
-import { PlayCircle, BarChart2, TrendingUp, RotateCcw, Filter } from "lucide-react"
+import { TrendingUp, RotateCcw } from "lucide-react"
 import { reviewTracker } from "@/lib/reviewTracker"
-import { vocabularyData } from "@/data/vocabulary"
+import { vocabularyData, getVocabularyData } from "@/data/vocabulary"
 import { exerciseStats } from "@/lib/exerciseStats"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -18,6 +18,9 @@ const VocabularyStats = () => {
   const counts = reviewTracker.getCountsByChapter()
   const [showOnlyWrong, setShowOnlyWrong] = useState(true)
 
+  // Use level-aware vocabulary for displaying stats
+  const levelVocabulary = getVocabularyData()
+
   const totalToReview = useMemo(() => reviewTracker.getAllWords().length, [])
 
   const chapterIdToInfo = useMemo(() => {
@@ -29,10 +32,23 @@ const VocabularyStats = () => {
   }, [])
 
   const stats = exerciseStats.get('vocabulary')
-  const overallSeen = Object.values(stats.seenWordsByChapter || {}).reduce((acc, arr) => acc + arr.length, 0)
-  const overallWrong = Math.max(0, overallSeen - stats.correctAttempts)
+  
+  // Filter stats to only show chapters from the current level
+  const levelChapterIds = new Set(levelVocabulary.map(c => c.id))
+  
+  const overallSeen = Object.entries(stats.seenWordsByChapter || {})
+    .filter(([chapterId]) => levelChapterIds.has(chapterId))
+    .reduce((acc, [, arr]) => acc + arr.length, 0)
+  
+  const overallCorrect = Object.entries(stats.chapterStats || {})
+    .filter(([chapterId]) => levelChapterIds.has(chapterId))
+    .reduce((acc, [, chapterStat]) => acc + chapterStat.correctAttempts, 0)
+  
+  const overallWrong = Math.max(0, overallSeen - overallCorrect)
 
-  const visibleCounts = showOnlyWrong ? counts : vocabularyData.map(c => ({ chapterId: c.id, count: counts.find(x => x.chapterId === c.id)?.count || 0 }))
+  const visibleCounts = showOnlyWrong 
+    ? counts.filter(c => levelChapterIds.has(c.chapterId))
+    : levelVocabulary.map(c => ({ chapterId: c.id, count: counts.find(x => x.chapterId === c.id)?.count || 0 }))
 
   return (
     <div className="min-h-screen bg-background pb-20">
@@ -89,7 +105,7 @@ const VocabularyStats = () => {
             </CardHeader>
             <CardContent className="space-y-3">
               {visibleCounts.map(({ chapterId, count }) => {
-                const chapter = vocabularyData.find(c => c.id === chapterId)
+                const chapter = levelVocabulary.find(c => c.id === chapterId)
                 if (!chapter) return null
                 const cStats = stats.chapterStats[chapterId] || { totalAttempts: 0, correctAttempts: 0 }
                 const seen = (stats.seenWordsByChapter?.[chapterId] || []).length

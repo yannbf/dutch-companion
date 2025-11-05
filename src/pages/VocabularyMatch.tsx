@@ -1,8 +1,7 @@
 import { useState, useMemo, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Volume2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { vocabularyData, VocabularyWord } from "@/data/vocabulary";
+import { getVocabularyData, vocabularyData, VocabularyWord } from "@/data/vocabulary";
 import { createLocalStorageStore } from "@/lib/localStorage";
 import { speakerService } from "@/services/speaker";
 import { hapticService } from "@/services/haptic";
@@ -39,10 +38,13 @@ const VocabularyMatch = () => {
     const favorites = favoritesStore.get();
     const onlySeparable = onlySeparableStore.get();
 
+    // Use level-aware vocabulary for exercises
+    const levelVocabulary = getVocabularyData();
+
     let words: VocabularyWord[] = [];
 
     if (selectedChapters.length > 0) {
-      words.push(...vocabularyData
+      words.push(...levelVocabulary
         .filter((item) => selectedChapters.includes(item.chapter))
         .flatMap((chapter) => chapter.words));
     }

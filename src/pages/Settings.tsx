@@ -1,11 +1,13 @@
 import { useState, useEffect } from "react";
-import { Languages, Shuffle, Volume2, Trash2, Database } from "lucide-react";
+import { Languages, Shuffle, Volume2, Trash2, Database, GraduationCap } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { createLocalStorageStore, localStorageUtils } from "@/lib/localStorage";
+import { getVocabularyLevels, toggleVocabularyLevel, type VocabularyLevel } from "@/data/vocabulary";
+import { SelectionCard } from "@/components/exercise";
 
 // Create a store for global settings
 const globalSettingsStore = createLocalStorageStore('taal-boost-global-settings', {
@@ -32,10 +34,16 @@ const Settings = () => {
   const [showTranslation, setShowTranslation] = useState(loadGlobalSettings().showTranslation);
   const [randomMode, setRandomMode] = useState(loadGlobalSettings().randomMode);
   const [voiceMode, setVoiceMode] = useState(loadGlobalSettings().voiceMode);
+  const [vocabularyLevels, setVocabularyLevelsState] = useState<VocabularyLevel[]>(getVocabularyLevels());
 
   useEffect(() => {
     saveGlobalSettings({ showTranslation, randomMode, voiceMode });
   }, [showTranslation, randomMode, voiceMode]);
+
+  const handleVocabularyLevelToggle = (level: VocabularyLevel) => {
+    toggleVocabularyLevel(level);
+    setVocabularyLevelsState(getVocabularyLevels());
+  };
 
   return (
     <div className="min-h-screen bg-background pb-20 pt-6 px-4">
@@ -92,6 +100,36 @@ const Settings = () => {
                 onCheckedChange={setVoiceMode}
               />
             </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <GraduationCap className="w-5 h-5" />
+              Vocabulary Levels
+            </CardTitle>
+            <CardDescription>Select which vocabulary levels to include in exercises</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-2 gap-3">
+              <SelectionCard
+                label="Level 3"
+                description="Chapters 1-5 + Weather"
+                isSelected={vocabularyLevels.includes('level3')}
+                onClick={() => handleVocabularyLevelToggle('level3')}
+              />
+
+              <SelectionCard
+                label="Level 4"
+                description="Chapters 6-11"
+                isSelected={vocabularyLevels.includes('level4')}
+                onClick={() => handleVocabularyLevelToggle('level4')}
+              />
+            </div>
+            <p className="text-xs text-muted-foreground">
+              You can select both levels to include all chapters. At least one level must be selected. The vocabulary browser always shows all levels.
+            </p>
           </CardContent>
         </Card>
 

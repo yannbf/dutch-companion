@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect, useRef, useCallback } from "react";
-import { vocabularyData } from "@/data/vocabulary";
+import { vocabularyData, getVocabularyData } from "@/data/vocabulary";
 import type { VocabularyWord } from "@/data/types";
 import { SwipeableCardPile, CardContent } from "@/components/SwipeableCardPile";
 import { Button } from "@/components/ui/button";
@@ -10,7 +10,7 @@ import { ReactNode } from "react";
 import { createLocalStorageStore } from "@/lib/localStorage";
 import { reviewTracker } from "@/lib/reviewTracker";
 import { exerciseStats } from "@/lib/exerciseStats";
-import { ExerciseSummary } from "@/components/exercise";
+import { ExerciseSummary, ChapterSelector, SelectionCard } from "@/components/exercise";
 import { AppHeader } from "@/components/AppHeader";
 import {
   Collapsible,
@@ -210,8 +210,11 @@ const VocabularyFlashcards = () => {
 
     const normalWords: VocabularyWord[] = [];
 
+    // Use level-aware vocabulary for exercises
+    const levelVocabulary = getVocabularyData();
+
     if (selectedChapters.length > 0) {
-      normalWords.push(...vocabularyData
+      normalWords.push(...levelVocabulary
         .filter((item) => selectedChapters.includes(Number(item.chapter)))
         .flatMap((chapter) => chapter.words));
     }
@@ -394,87 +397,27 @@ const VocabularyFlashcards = () => {
         />
 
         <div className="max-w-4xl mx-auto space-y-4 px-4 pt-6">
+          <ChapterSelector
+            chapters={getVocabularyData()}
+            selectedChapters={selectedChapters}
+            onToggle={handleChapterToggle}
+          />
 
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-            {vocabularyData.map((chapter) => {
-              const chapterNum = Number(chapter.chapter);
-              const isSelected = selectedChapters.includes(chapterNum);
-              return (
-                <button
-                  key={chapter.chapter}
-                  onClick={() => handleChapterToggle(chapterNum)}
-                  className={`
-                        relative p-4 rounded-lg border-2 transition-all text-left
-                        active:scale-95 touch-manipulation
-                        ${isSelected
-                      ? 'border-primary bg-primary/10'
-                      : 'border-border bg-card hover:border-primary/50'
-                    }
-                      `}
-                >
-                  <div className="space-y-1">
-                    <div className="text-sm font-bold line-clamp-2">Chapter {chapter.chapter}</div>
-                    <div className="text-xs text-muted-foreground">{chapter.title} ({chapter.words.length} words)</div>
-                  </div>
-                  {isSelected && (
-                    <div className="absolute top-1.5 right-1.5 w-4 h-4 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-[10px] font-bold">
-                      ✓
-                    </div>
-                  )}
-                </button>
-              );
-            })}
+          <div className="border-t pt-4">
+            <SelectionCard
+              label="♥ Favorites"
+              description={`${getFavoriteWords().length} words`}
+              isSelected={includeFavorites}
+              onClick={handleFavoritesToggle}
+            />
           </div>
 
-          <hr className="border-t" />
-
-          <button
-            onClick={handleFavoritesToggle}
-            className={`
-                  w-full p-4 rounded-lg border-2 transition-all text-left
-                  active:scale-95 touch-manipulation
-                  ${includeFavorites
-                ? 'border-primary bg-primary/10'
-                : 'border-border bg-card hover:border-primary/50'
-              }
-                `}
-          >
-            <div className="flex items-center justify-between">
-              <div className="space-y-1">
-                <div className="text-sm font-bold">♥ Favorites</div>
-                <div className="text-xs text-muted-foreground">{getFavoriteWords().length} words</div>
-              </div>
-              {includeFavorites && (
-                <div className="w-4 h-4 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-[10px] font-bold">
-                  ✓
-                </div>
-              )}
-            </div>
-          </button>
-
-          <button
+          <SelectionCard
+            label="Flipped mode (EN → NL)"
+            description="Show English first; flip to see Dutch"
+            isSelected={flippedMode}
             onClick={handleFlippedToggle}
-            className={`
-                  w-full mt-3 p-4 rounded-lg border-2 transition-all text-left
-                  active:scale-95 touch-manipulation
-                  ${flippedMode
-                ? 'border-primary bg-primary/10'
-                : 'border-border bg-card hover:border-primary/50'
-              }
-                `}
-          >
-            <div className="flex items-center justify-between">
-              <div className="space-y-1">
-                <div className="text-sm font-bold">Flipped mode (EN → NL)</div>
-                <div className="text-xs text-muted-foreground">Show English first; flip to see Dutch</div>
-              </div>
-              {flippedMode && (
-                <div className="w-4 h-4 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-[10px] font-bold">
-                  ✓
-                </div>
-              )}
-            </div>
-          </button>
+          />
 
           <Button
             onClick={handleStartGame}

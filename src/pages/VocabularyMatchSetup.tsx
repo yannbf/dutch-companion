@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Play } from "lucide-react";
-import { vocabularyData } from "@/data/vocabulary";
+import { getVocabularyData, vocabularyData } from "@/data/vocabulary";
 import { createLocalStorageStore } from "@/lib/localStorage";
 import {
   ExerciseSetupLayout,
@@ -27,6 +26,9 @@ const VocabularyMatchSetup = () => {
   const [onlySeparable, setOnlySeparable] = useState<boolean>(() => {
     return onlySeparableStore.get();
   });
+
+  // Use level-aware vocabulary for exercises
+  const levelVocabulary = getVocabularyData();
 
   const favorites = favoritesStore.get();
   const favoriteWords = vocabularyData
@@ -77,7 +79,7 @@ const VocabularyMatchSetup = () => {
     >
       {/* Chapter Selection */}
       <ChapterSelector
-        chapters={vocabularyData}
+        chapters={levelVocabulary}
         selectedChapters={selectedChapters}
         onToggle={handleChapterToggle}
       />
