@@ -39,6 +39,7 @@ const SeparableVerbs = () => {
   const [typedAnswer, setTypedAnswer] = useState("");
   const [shakeButton, setShakeButton] = useState(false);
   const [showSuccessButton, setShowSuccessButton] = useState(false);
+  const [wasInputFocused, setWasInputFocused] = useState(false); // Track if user was typing
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const longPressTimerRef = useRef<NodeJS.Timeout | null>(null);
   const longPressTriggeredRef = useRef(false);
@@ -89,10 +90,11 @@ const SeparableVerbs = () => {
     setSelectedWordIndex(null);
     setTypedAnswer("");
     setShowSuccessButton(false);
-    if (textareaRef.current) {
+    // Refocus if user was actively typing
+    if (wasInputFocused && textareaRef.current) {
       textareaRef.current.focus();
     }
-  }, []);
+  }, [wasInputFocused]);
 
   useEffect(() => {
     const difficultiesParam = searchParams.get("difficulties") || "easy,medium,hard";
@@ -112,7 +114,7 @@ const SeparableVerbs = () => {
     if (selected.length > 0) {
       initializeRound(selected[0]);
     }
-  }, [searchParams, initializeRound]);
+  }, [searchParams, initializeRound, wasInputFocused]);
 
   const handleWordPressStart = (item: WordItem, from: "available" | "answer", index?: number) => {
     if (isKeyboardMode) return;
@@ -233,12 +235,13 @@ const SeparableVerbs = () => {
 
       // Shake the button
       setShakeButton(true);
-      setTimeout(() => setShakeButton(false), 600);
-
-      // Refocus textarea in keyboard mode after shake animation
-      if (isKeyboardMode && textareaRef.current) {
-        textareaRef.current.focus();
-      }
+      setTimeout(() => {
+        setShakeButton(false);
+        // Refocus textarea if user was actively typing
+        if (wasInputFocused && textareaRef.current) {
+          textareaRef.current.focus();
+        }
+      }, 600);
 
       exerciseStats.recordAttempt(
         "verbs",
@@ -253,7 +256,8 @@ const SeparableVerbs = () => {
     if (currentExercise) {
       if (isKeyboardMode) {
         setTypedAnswer("");
-        if (textareaRef.current) {
+        // Refocus if user was actively typing
+        if (wasInputFocused && textareaRef.current) {
           textareaRef.current.focus();
         }
       } else {
@@ -436,15 +440,18 @@ const SeparableVerbs = () => {
                     value=""
                     onChange={() => { }} // Handled by the visible text above
                     onFocus={() => {
+                      setWasInputFocused(true);
                       // Stop speech recognition when user focuses on input
                       if (isListening || speechReady) {
                         stopListening();
                       }
                     }}
+                    onBlur={() => {
+                      setWasInputFocused(false);
+                    }}
                     placeholder={typedAnswer || interimTranscript ? "" : "Type your answer here..."}
                     className="absolute inset-0 w-full h-full px-4 py-3 bg-transparent border-0 resize-none text-transparent caret-black focus:outline-none min-h-[80px] touch-auto"
                     disabled={isCorrect === true}
-                    autoFocus
                   />
                 </div>
               </div>
