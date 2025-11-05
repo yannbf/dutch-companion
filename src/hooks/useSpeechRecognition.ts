@@ -65,10 +65,8 @@ export function useSpeechRecognition(
     if (recognitionRef.current) {
       recognitionRef.current.stop()
     }
-    setIsListening(false)
-    setSpeechReady(false)
-    setInterimTranscript('')
-    setIsSpeaking(false)
+    // Don't immediately clear state - let onend handle cleanup
+    // This ensures any pending final transcripts are processed
   }, [])
 
   const startListening = useCallback(() => {

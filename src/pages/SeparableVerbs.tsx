@@ -65,18 +65,11 @@ const SeparableVerbs = () => {
 
   // Stop speech recognition when keyboard mode is disabled
   useEffect(() => {
-    if (!isKeyboardMode) {
+    if (!isKeyboardMode && (isListening || speechReady)) {
       stopListening();
     }
-  }, [isKeyboardMode, stopListening]);
+  }, [isKeyboardMode, isListening, speechReady, stopListening]);
 
-  // Focus textarea when keyboard mode is enabled
-  useEffect(() => {
-    if (isKeyboardMode && textareaRef.current) {
-      textareaRef.current.focus();
-      textareaRef.current.setSelectionRange(typedAnswer.length, typedAnswer.length);
-    }
-  }, [isKeyboardMode, typedAnswer.length]);
 
   const initializeRound = useCallback((exercise: SentenceBuilderExercise) => {
     setCurrentExercise(exercise);
@@ -289,10 +282,13 @@ const SeparableVerbs = () => {
     }
   };
 
-  // Play sound when speech recognition becomes ready
+  // Play sound when speech recognition becomes ready (skip on mobile)
   useEffect(() => {
     if (speechReady) {
-      audioService.play('record-start');
+      const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+      if (!isMobile) {
+        audioService.play('record-start');
+      }
     }
   }, [speechReady]);
 
@@ -441,7 +437,9 @@ const SeparableVerbs = () => {
                     onChange={() => { }} // Handled by the visible text above
                     onFocus={() => {
                       // Stop speech recognition when user focuses on input
-                      stopListening();
+                      if (isListening || speechReady) {
+                        stopListening();
+                      }
                     }}
                     placeholder={typedAnswer || interimTranscript ? "" : "Type your answer here..."}
                     className="absolute inset-0 w-full h-full px-4 py-3 bg-transparent border-0 resize-none text-transparent caret-black focus:outline-none min-h-[80px] touch-auto"
