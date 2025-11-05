@@ -19,6 +19,7 @@ import SeparableVerbs from "./pages/SeparableVerbs";
 import SentenceGenerator from "./pages/SentenceGenerator";
 import NotFound from "./pages/NotFound";
 import { BottomNav } from "./components/BottomNav";
+import Resources from "./pages/Resources";
 
 const queryClient = new QueryClient();
 
@@ -45,6 +46,7 @@ const App = () => (
             <Route path="/exercises/sentence-generator" element={<SentenceGenerator />} />
             <Route path="/vocabulary" element={<Vocabulary />} />
             <Route path="/settings" element={<Settings />} />
+            <Route path="/resources" element={<Resources />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </div>
