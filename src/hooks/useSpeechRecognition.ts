@@ -55,6 +55,7 @@ export function useSpeechRecognition(
 
   // Refs
   const recognitionRef = useRef<SpeechRecognition | null>(null)
+  const latestInterimRef = useRef('')
 
   // Check if speech recognition is supported
   const isSupported =
@@ -88,6 +89,7 @@ export function useSpeechRecognition(
     recognition.onstart = () => {
       setSpeechReady(true)
       setIsListening(true)
+      latestInterimRef.current = ''
       onStart?.()
     }
 
@@ -105,12 +107,14 @@ export function useSpeechRecognition(
       }
 
       setInterimTranscript(interimTranscript)
+      latestInterimRef.current = interimTranscript
       setIsSpeaking(!!interimTranscript)
 
       onResult?.(finalTranscript, interimTranscript)
 
       if (finalTranscript) {
         setInterimTranscript('')
+        latestInterimRef.current = ''
         setIsSpeaking(false)
       }
     }
@@ -120,6 +124,7 @@ export function useSpeechRecognition(
       setIsListening(false)
       setSpeechReady(false)
       setInterimTranscript('')
+      latestInterimRef.current = ''
       setIsSpeaking(false)
       onError?.(event.error)
     }
@@ -127,7 +132,15 @@ export function useSpeechRecognition(
     recognition.onend = () => {
       setIsListening(false)
       setSpeechReady(false)
+
+      // If there was interim text when stopping, treat it as final
+      // This gives users the impression their words were captured
+      if (latestInterimRef.current.trim()) {
+        onResult?.(latestInterimRef.current.trim(), '')
+      }
+
       setInterimTranscript('')
+      latestInterimRef.current = ''
       setIsSpeaking(false)
       onEnd?.()
     }
