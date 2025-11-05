@@ -208,11 +208,16 @@ const SeparableVerbs = () => {
     } else {
       hapticService.medium();
       audioService.play('error');
-      
+
       // Shake the button
       setShakeButton(true);
       setTimeout(() => setShakeButton(false), 600);
-      
+
+      // Refocus textarea in keyboard mode after shake animation
+      if (isKeyboardMode && textareaRef.current) {
+        textareaRef.current.focus();
+      }
+
       exerciseStats.recordAttempt(
         "verbs",
         currentExercise.difficulty,
@@ -379,7 +384,7 @@ const SeparableVerbs = () => {
                 onChange={(e) => setTypedAnswer(e.target.value)}
                 placeholder="Type your answer here..."
                 className="w-full px-4 py-3 rounded-xl border-2 border-border bg-background text-base resize-none focus:outline-none focus:border-primary min-h-[80px] touch-auto"
-                disabled={isCorrect !== null}
+                disabled={isCorrect === true}
                 autoFocus
               />
             </div>
@@ -488,6 +493,7 @@ const SeparableVerbs = () => {
               }`}
               size="lg"
               disabled={showSuccessButton}
+              tabIndex={-1}
             >
               <motion.div
                 initial={false}
