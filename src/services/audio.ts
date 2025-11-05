@@ -9,6 +9,7 @@ export type AudioType =
   | 'incorrect'
   | 'error'
   | 'complete'
+  | 'record-start'
 
 class AudioService {
   private audioContext: AudioContext | null = null
@@ -105,6 +106,21 @@ class AudioService {
           )
           oscillator.start(audioContext.currentTime)
           oscillator.stop(audioContext.currentTime + 0.5)
+          break
+
+        case 'record-start':
+          // Subtle, simple recording start beep (short ~440Hz A4)
+          oscillator.frequency.setValueAtTime(440, audioContext.currentTime)
+          gainNode.gain.setValueAtTime(
+            clampedVolume * 0.7,
+            audioContext.currentTime
+          ) // Softer
+          gainNode.gain.exponentialRampToValueAtTime(
+            0.01,
+            audioContext.currentTime + 0.08
+          )
+          oscillator.start(audioContext.currentTime)
+          oscillator.stop(audioContext.currentTime + 0.08)
           break
 
         default:

@@ -11,10 +11,12 @@ import { audioService } from "@/services/audio";
 import { exerciseStats } from "@/lib/exerciseStats";
 import { ExerciseProgress, ExerciseSummary, ScoreDisplay } from "@/components/exercise";
 import { AppHeader } from "@/components/AppHeader";
+import { useSpeechRecognition } from "@/hooks/useSpeechRecognition";
+import SpeechRecognitionButton from "@/components/SpeechRecognitionButton";
 
-type WordItem = { 
-  id: string; 
-  text: string; 
+type WordItem = {
+  id: string;
+  text: string;
   originalIndex: number;
   isSelected: boolean;
 };
@@ -40,6 +42,33 @@ const SeparableVerbs = () => {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const longPressTimerRef = useRef<NodeJS.Timeout | null>(null);
   const longPressTriggeredRef = useRef(false);
+
+  // Speech recognition hook
+  const {
+    isListening,
+    speechReady,
+    interimTranscript,
+    isSpeaking,
+    toggleListening,
+    stopListening,
+  } = useSpeechRecognition({
+    onResult: (finalTranscript) => {
+      if (finalTranscript) {
+        // Add the final transcript to the textarea
+        setTypedAnswer(prev => {
+          const newText = prev + (prev ? ' ' : '') + finalTranscript.trim();
+          return newText;
+        });
+      }
+    },
+  });
+
+  // Stop speech recognition when keyboard mode is disabled
+  useEffect(() => {
+    if (!isKeyboardMode) {
+      stopListening();
+    }
+  }, [isKeyboardMode, stopListening]);
 
   // Focus textarea when keyboard mode is enabled
   useEffect(() => {
@@ -80,7 +109,7 @@ const SeparableVerbs = () => {
     const pool = mode === "separable-verbs" ? separableVerbs : omTeExercises;
     const filtered = pool.filter((v) => selectedDifficulties.includes(v.difficulty));
     const shuffled = [...filtered].sort(() => Math.random() - 0.5);
-    
+
     // Take up to 10 exercises, or all available if less
     const maxRounds = Math.min(10, filtered.length);
     const selected = shuffled.slice(0, maxRounds);
@@ -95,14 +124,14 @@ const SeparableVerbs = () => {
   const handleWordPressStart = (item: WordItem, from: "available" | "answer", index?: number) => {
     if (isKeyboardMode) return;
     if (from === "available") return; // Long press only works on answer words
-    
+
     longPressTriggeredRef.current = false;
-    
+
     // Start long press timer (500ms)
     longPressTimerRef.current = setTimeout(() => {
       longPressTriggeredRef.current = true;
       hapticService.medium(); // Stronger haptic for long press
-      
+
       // Activate swap mode
       if (selectedWordIndex === null) {
         setSelectedWordIndex(index!);
@@ -124,28 +153,28 @@ const SeparableVerbs = () => {
 
   const handleWordPressEnd = (item: WordItem, from: "available" | "answer") => {
     if (isKeyboardMode) return;
-    
+
     // Clear long press timer
     if (longPressTimerRef.current) {
       clearTimeout(longPressTimerRef.current);
       longPressTimerRef.current = null;
     }
-    
+
     // If long press was triggered, don't do anything on release
     if (longPressTriggeredRef.current) {
       longPressTriggeredRef.current = false;
       return;
     }
-    
+
     // Regular tap/click behavior
     if (from === "available") {
       // Don't allow selecting if already selected
       if (item.isSelected) return;
-      
+
       hapticService.light();
-      
+
       // Mark as selected and add to answer
-      setAvailableWords((words) => 
+      setAvailableWords((words) =>
         words.map((w) => w.id === item.id ? { ...w, isSelected: true } : w)
       );
       setUserAnswer((a) => [...a, item]);
@@ -154,7 +183,7 @@ const SeparableVerbs = () => {
       // Single tap on answer word - remove
       hapticService.light();
       setUserAnswer((a) => a.filter((x) => x.id !== item.id));
-      setAvailableWords((words) => 
+      setAvailableWords((words) =>
         words.map((w) => w.id === item.id ? { ...w, isSelected: false } : w)
       );
       setSelectedWordIndex(null);
@@ -170,21 +199,21 @@ const SeparableVerbs = () => {
 
   const handleCheck = () => {
     if (!currentExercise) return;
-    
+
     // Don't check if already showing correct result
     if (isCorrect === true) return;
 
     const expected = currentExercise.sentence.join(" ");
-    const user = isKeyboardMode 
-      ? typedAnswer.trim() 
+    const user = isKeyboardMode
+      ? typedAnswer.trim()
       : userAnswer.map((i) => i.text).join(" ");
-    
+
     // Allow checking even with incomplete answer
     if (!user) return; // Only prevent if completely empty
 
     const correct = normalizeForCompare(user) === normalizeForCompare(expected);
     setIsCorrect(correct);
-    
+
     if (correct) {
       hapticService.medium();
       audioService.play('success');
@@ -260,6 +289,13 @@ const SeparableVerbs = () => {
     }
   };
 
+  // Play sound when speech recognition becomes ready
+  useEffect(() => {
+    if (speechReady) {
+      audioService.play('record-start');
+    }
+  }, [speechReady]);
+
   if (showResults) {
     audioService.play('complete');
     return (
@@ -308,7 +344,7 @@ const SeparableVerbs = () => {
     );
   }
 
-  const canResetAction = isKeyboardMode 
+  const canResetAction = isKeyboardMode
     ? typedAnswer.length > 0 && isCorrect !== true
     : userAnswer.length > 0 && isCorrect !== true;
 
@@ -323,11 +359,11 @@ const SeparableVerbs = () => {
         }
         right={<ScoreDisplay score={score} variant="compact" animate={false} />}
       />
-      
-      <div className="flex-1 flex flex-col px-4 pt-16 pb-6 max-w-2xl mx-auto w-full">
+
+      <div className="flex-1 flex flex-col px-4 pt-16 pb-20 max-w-2xl mx-auto w-full">
         {/* Verb info - centered */}
         {"verb" in currentExercise && (
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.15 }}
@@ -377,16 +413,45 @@ const SeparableVerbs = () => {
         {/* User's answer area */}
         <div className="mb-8">
           {isKeyboardMode ? (
-            <div className="space-y-2">
-              <textarea
-                ref={textareaRef}
-                value={typedAnswer}
-                onChange={(e) => setTypedAnswer(e.target.value)}
-                placeholder="Type your answer here..."
-                className="w-full px-4 py-3 rounded-xl border-2 border-border bg-background text-base resize-none focus:outline-none focus:border-primary min-h-[80px] touch-auto"
-                disabled={isCorrect === true}
-                autoFocus
-              />
+            <div className="space-y-4">
+              {/* Custom textarea with ghost text support */}
+              <div className="relative">
+                <div
+                  className={`w-full px-4 py-3 rounded-xl border-2 resize-none min-h-[80px] touch-auto whitespace-pre-wrap break-words ${isCorrect === true
+                      ? 'border-muted bg-muted text-muted-foreground cursor-not-allowed'
+                      : 'border-border bg-background text-foreground focus-within:border-primary'
+                    }`}
+                  style={{
+                    fontSize: '16px', // Prevents zoom on iOS
+                    lineHeight: '1.5',
+                  }}
+                >
+                  {/* Typed text */}
+                  <span className="text-foreground">{typedAnswer}</span>
+                  {/* Ghost interim text */}
+                  {interimTranscript && (
+                    <span className="text-muted-foreground/60 italic opacity-70">
+                      {typedAnswer ? ' ' : ''}{interimTranscript}
+                    </span>
+                  )}
+                  {/* Invisible textarea for input handling */}
+                  <textarea
+                    ref={textareaRef}
+                    value=""
+                    onChange={() => { }} // Handled by the visible text above
+                    onFocus={() => {
+                      // Stop speech recognition when user focuses on input
+                      stopListening();
+                    }}
+                    placeholder={typedAnswer || interimTranscript ? "" : "Type your answer here..."}
+                    className="absolute inset-0 w-full h-full px-4 py-3 bg-transparent border-0 resize-none text-transparent caret-black focus:outline-none min-h-[80px] touch-auto"
+                    disabled={isCorrect === true}
+                    autoFocus
+                  />
+                </div>
+              </div>
+
+
             </div>
           ) : (
             <div className="space-y-3">
@@ -400,15 +465,15 @@ const SeparableVerbs = () => {
                         key={item.id}
                         layout
                         initial={{ scale: 0.8, opacity: 0, y: 20 }}
-                        animate={{ 
-                          scale: selectedWordIndex === index ? 1.05 : 1, 
+                        animate={{
+                          scale: selectedWordIndex === index ? 1.05 : 1,
                           opacity: 1,
                           y: 0
                         }}
                         exit={{ scale: 0.8, opacity: 0, y: 20 }}
-                        transition={{ 
-                          type: "spring", 
-                          stiffness: 500, 
+                        transition={{
+                          type: "spring",
+                          stiffness: 500,
                           damping: 30,
                           mass: 0.5
                         }}
@@ -450,7 +515,7 @@ const SeparableVerbs = () => {
                 <div key={item.id} className="relative">
                   {item.isSelected ? (
                     // Placeholder for selected word - grey background like Duolingo
-                    <div 
+                    <div
                       className="px-4 py-2.5 rounded-xl font-medium text-base border-2 border-border/30 bg-muted/60 pointer-events-none"
                     >
                       <span className="invisible">{item.text}</span>
@@ -476,54 +541,74 @@ const SeparableVerbs = () => {
         )}
 
         {/* Action buttons */}
-        <div className="flex gap-3 mt-4 pt-4">
-          <motion.div
-            className="flex-1"
-            animate={shakeButton ? {
-              x: [0, -10, 10, -5, 5, 0],
-            } : {}}
-            transition={{ duration: 0.4 }}
-          >
-            <Button
-              onClick={handleCheck}
-              className={`w-full h-12 text-base font-bold rounded-xl transition-colors duration-300 ${
-                showSuccessButton
-                  ? 'bg-green-500 hover:bg-green-500/90 text-white !opacity-100'
-                  : ''
-              }`}
-              size="lg"
-              disabled={showSuccessButton}
-              tabIndex={-1}
+        <div className="mt-2 pt-2 space-y-2">
+          <div className="flex gap-3">
+            <motion.div
+              className="flex-1"
+              animate={shakeButton ? {
+                x: [0, -10, 10, -5, 5, 0],
+              } : {}}
+              transition={{ duration: 0.4 }}
             >
-              <motion.div
-                initial={false}
-                animate={{
-                  scale: showSuccessButton ? [1, 1.1, 1] : 1,
-                  rotate: showSuccessButton ? [0, 10, -10, 0] : 0
-                }}
-                transition={{ duration: 0.5 }}
-                className="flex items-center justify-center gap-2"
+              <Button
+                onClick={handleCheck}
+                className={`w-full h-12 text-base font-bold rounded-xl transition-colors duration-300 ${showSuccessButton
+                    ? 'bg-green-500 hover:bg-green-500/90 text-white !opacity-100'
+                    : ''
+                  }`}
+                size="lg"
+                disabled={showSuccessButton}
+                tabIndex={-1}
               >
-                {showSuccessButton ? (
-                  <>
-                    <Check className="w-5 h-5" />
-                    <span>Correct!</span>
-                  </>
-                ) : (
-                  <span>Check</span>
-                )}
-              </motion.div>
+                <motion.div
+                  initial={false}
+                  animate={{
+                    scale: showSuccessButton ? [1, 1.1, 1] : 1,
+                    rotate: showSuccessButton ? [0, 10, -10, 0] : 0
+                  }}
+                  transition={{ duration: 0.5 }}
+                  className="flex items-center justify-center gap-2"
+                >
+                  {showSuccessButton ? (
+                    <>
+                      <Check className="w-5 h-5" />
+                      <span>Correct!</span>
+                    </>
+                  ) : (
+                    <span>Check</span>
+                  )}
+                </motion.div>
+              </Button>
+            </motion.div>
+            <Button
+              onClick={handleReset}
+              variant="outline"
+              className="h-12 px-5 rounded-xl"
+              size="lg"
+              disabled={!canResetAction}
+            >
+              <RotateCcw className="w-4 h-4" />
             </Button>
-          </motion.div>
-          <Button
-            onClick={handleReset}
-            variant="outline"
-            className="h-12 px-5 rounded-xl"
-            size="lg"
-            disabled={!canResetAction}
-          >
-            <RotateCcw className="w-4 h-4" />
-          </Button>
+          </div>
+
+          {/* Microphone button - only in keyboard mode */}
+          {isKeyboardMode && (
+            <div
+              className="w-full flex justify-center fixed left-0 right-0 pointer-events-none z-40"
+              style={{ bottom: "calc(env(safe-area-inset-bottom, 0px) + 96px)" }}
+            >
+              <div className="pointer-events-auto">
+                <SpeechRecognitionButton
+                  isListening={isListening}
+                  speechReady={speechReady}
+                  isSpeaking={isSpeaking}
+                  onToggle={toggleListening}
+                  disabled={isCorrect === true}
+                  size="lg"
+                />
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>
