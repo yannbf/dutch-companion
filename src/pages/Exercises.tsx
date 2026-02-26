@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import { GraduationCap, BookOpen, FileText, Shuffle, Sparkles } from "lucide-react";
+import { GraduationCap, BookOpen, FileText, Shuffle, Sparkles, Volume2 } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 
 const Exercises = () => {
@@ -40,6 +40,13 @@ const Exercises = () => {
       description: "Spin and combine: pronouns, time and verbs",
       icon: Sparkles,
       path: "/exercises/sentence-generator",
+    },
+    {
+      id: "pronunciation",
+      title: "Pronunciation",
+      description: "Search words and hear native-like pronunciation in context",
+      icon: Volume2,
+      path: "/exercises/pronunciation",
     },
   ];
 

@@ -17,6 +17,7 @@ import DeOfHet from "./pages/DeOfHet";
 import SeparableVerbsSetup from "./pages/SeparableVerbsSetup";
 import SeparableVerbs from "./pages/SeparableVerbs";
 import SentenceGenerator from "./pages/SentenceGenerator";
+import PronunciationPractice from "./pages/PronunciationPractice";
 import NotFound from "./pages/NotFound";
 import { BottomNav } from "./components/BottomNav";
 import Resources from "./pages/Resources";
@@ -44,6 +45,7 @@ const App = () => (
             <Route path="/exercises/separable-verbs" element={<SeparableVerbsSetup />} />
             <Route path="/exercises/separable-verbs/play" element={<SeparableVerbs />} />
             <Route path="/exercises/sentence-generator" element={<SentenceGenerator />} />
+            <Route path="/exercises/pronunciation" element={<PronunciationPractice />} />
             <Route path="/vocabulary" element={<Vocabulary />} />
             <Route path="/settings" element={<Settings />} />
             <Route path="/resources" element={<Resources />} />
