@@ -123,7 +123,7 @@ const PronunciationPractice = () => {
 
     return () => {
       mounted = false;
-      widgetRef.current?.close?.();
+      widgetRef.current = null;
     };
   }, []);
 
