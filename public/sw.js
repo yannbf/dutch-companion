@@ -1,10 +1,14 @@
-const CACHE_NAME = 'dutch-companion-v3';
+const CACHE_NAME = 'dutch-companion-v4';
 const urlsToCache = [
   '/manifest.json',
   '/icon-192.png',
+  '/icon-192-maskable.png',
   '/icon-512.png',
+  '/icon-512-maskable.png',
   '/apple-touch-icon.png'
 ];
+
+const pwaMetadataAssets = new Set(urlsToCache);
 
 self.addEventListener('install', (event) => {
   self.skipWaiting();
@@ -25,8 +29,29 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  const isStaticAsset = requestUrl.pathname.startsWith('/assets/') || urlsToCache.includes(requestUrl.pathname);
+  const isPwaMetadataAsset = pwaMetadataAssets.has(requestUrl.pathname);
+  const isStaticAsset = requestUrl.pathname.startsWith('/assets/') || isPwaMetadataAsset;
   if (!isStaticAsset) return;
+
+  if (isPwaMetadataAsset) {
+    event.respondWith(
+      fetch(event.request)
+        .then((networkResponse) => {
+          if (networkResponse && networkResponse.ok) {
+            const responseToCache = networkResponse.clone();
+            caches.open(CACHE_NAME).then((cache) => cache.put(event.request, responseToCache));
+          }
+          return networkResponse;
+        })
+        .catch(() =>
+          caches.match(event.request).then((cachedResponse) => {
+            if (cachedResponse) return cachedResponse;
+            return caches.match(event.request, { ignoreSearch: true });
+          })
+        )
+    );
+    return;
+  }
 
   event.respondWith(
     caches.match(event.request).then((cachedResponse) => {
