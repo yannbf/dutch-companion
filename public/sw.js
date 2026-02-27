@@ -1,4 +1,4 @@
-const CACHE_NAME = 'dutch-companion-v2';
+const CACHE_NAME = 'dutch-companion-v3';
 const urlsToCache = [
   '/manifest.json',
   '/icon-192.png',
