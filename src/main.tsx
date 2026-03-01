@@ -1,6 +1,7 @@
 import { createRoot } from "react-dom/client";
 import App from "./App.tsx";
 import "./index.css";
+import { enableDeterministicModeIfRequested } from "./lib/devDeterministic";
 
 const SW_MIGRATION_VERSION = import.meta.env.VITE_SW_MIGRATION_VERSION ?? "1";
 const SW_MIGRATION_KEY = `sw-migration-v${SW_MIGRATION_VERSION}-done`;
@@ -41,5 +42,7 @@ if ('serviceWorker' in navigator) {
     });
   });
 }
+
+enableDeterministicModeIfRequested();
 
 createRoot(document.getElementById("root")!).render(<App />);
