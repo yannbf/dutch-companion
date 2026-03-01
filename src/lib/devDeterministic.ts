@@ -6,12 +6,21 @@ const createSeededRandom = (seed: number) => {
   }
 }
 
+const E2E_MODE_KEY = '__e2e_deterministic_mode'
+
+export const isE2EDeterministicMode = () => {
+  if (!import.meta.env.DEV) return false
+  const params = new URLSearchParams(window.location.search)
+  return params.get('e2e') === '1' || localStorage.getItem(E2E_MODE_KEY) === '1'
+}
+
 export const enableDeterministicModeIfRequested = () => {
-  if (!import.meta.env.DEV) return
+  if (!isE2EDeterministicMode()) return
 
   const params = new URLSearchParams(window.location.search)
-  const deterministic = params.get('e2e') === '1'
-  if (!deterministic) return
+  if (params.get('e2e') === '1') {
+    localStorage.setItem(E2E_MODE_KEY, '1')
+  }
 
   const seed = Number(params.get('seed') || 42)
   const seededRandom = createSeededRandom(seed)

@@ -10,6 +10,7 @@ import { ReactNode } from "react";
 import { createLocalStorageStore } from "@/lib/localStorage";
 import { reviewTracker } from "@/lib/reviewTracker";
 import { exerciseStats } from "@/lib/exerciseStats";
+import { isE2EDeterministicMode } from "@/lib/devDeterministic";
 import { ExerciseSummary, ChapterSelector, SelectionCard } from "@/components/exercise";
 import { AppHeader } from "@/components/AppHeader";
 import {
@@ -28,7 +29,7 @@ const createVocabularyCardContent = (word: VocabularyWord, flipped: boolean): Ca
       content: (
         <div className="text-center space-y-6">
           <div className="space-y-2">
-            <p className="text-2xl text-muted-foreground font-medium">{word.translation}</p>
+            <p data-testid="vocab-translation" className="text-2xl text-muted-foreground font-medium">{word.translation}</p>
           </div>
         </div>
       ) as ReactNode,
@@ -55,7 +56,7 @@ const createVocabularyCardContent = (word: VocabularyWord, flipped: boolean): Ca
               {word.article && (
                 <p className="text-2xl text-muted-foreground font-medium">{word.article}</p>
               )}
-              <h2 className="text-3xl font-black text-primary">{word.word}</h2>
+              <h2 data-testid="vocab-word" className="text-3xl font-black text-primary">{word.word}</h2>
             </div>
             <div className="pt-4 border-t">
               <p className="text-sm text-muted-foreground mb-2">Example:</p>
@@ -70,7 +71,7 @@ const createVocabularyCardContent = (word: VocabularyWord, flipped: boolean): Ca
       content: (
         <div className="text-center space-y-6 w-full">
           <div className="space-y-4">
-            <p className="text-2xl text-muted-foreground italic">{word.translation}</p>
+            <p data-testid="vocab-translation" className="text-2xl text-muted-foreground italic">{word.translation}</p>
             <div className="pt-4 border-t">
               <p className="text-sm text-muted-foreground mb-2">Example:</p>
               <p className="italic text-lg">{word.exampleSentence}</p>
@@ -227,10 +228,30 @@ const VocabularyFlashcards = () => {
       index === self.findIndex(w => w.word === word.word)
     );
 
+    if (isE2EDeterministicMode()) {
+      const ordered = [...uniqueWords].sort((a, b) => a.word.localeCompare(b.word));
+      const beestIndex = ordered.findIndex((w) => w.word === 'beest');
+      if (beestIndex > 0) {
+        const [beest] = ordered.splice(beestIndex, 1);
+        ordered.unshift(beest);
+      }
+      return ordered;
+    }
+
     return [...uniqueWords].sort(() => Math.random() - 0.5);
   }, [selectedChapters, includeFavorites, gameStarted, getFavoriteWords, searchParams]);
 
   const currentWord = sessionWords[currentIndex];
+
+  useEffect(() => {
+    if (!isE2EDeterministicMode()) return
+
+    ;(window as Window & {
+      __e2eApplyVocabularySwipe?: (direction: 'left' | 'right') => void
+    }).__e2eApplyVocabularySwipe = (direction) => {
+      handleSwipe(direction)
+    }
+  }, [currentIndex, cardState, sessionWords, points])
 
   // Debounced speak function to prevent rapid speech requests
   const debouncedSpeak = (word: string) => {
@@ -325,6 +346,8 @@ const VocabularyFlashcards = () => {
       if (currentWord) {
         reviewTracker.markCorrect(currentWord.word);
       }
+    } else {
+      setPoints((prev) => prev - 1);
     }
 
     setResults((prev) => [...prev, { word: currentWord.word, correct }]);
@@ -517,7 +540,7 @@ const VocabularyFlashcards = () => {
           </div>
         }
         right={
-          <div className="text-sm font-medium">Score: {points}</div>
+          <div data-testid="vocab-score" className="text-sm font-medium">Score: {points}</div>
         }
       />
 

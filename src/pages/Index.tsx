@@ -278,7 +278,7 @@ const Index = () => {
           </div>
         }
         right={
-          <div className={`text-sm font-medium min-w-[60px] text-right transition-colors duration-200 ${
+          <div data-testid="verbs-score" className={`text-sm font-medium min-w-[60px] text-right transition-colors duration-200 ${
             lastResult === "correct" 
               ? "text-green-500" 
               : lastResult === "incorrect" 

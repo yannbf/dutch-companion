@@ -23,6 +23,7 @@ export const ProgressIndicator = ({ totalCards, results }: ProgressIndicatorProp
       {Array.from({ length: totalCards }, (_, index) => (
         <div
           key={index}
+          data-testid={`progress-pill-${index}`}
           className={`flex-1 h-2 rounded-full w-auto mx-0.5 block min-w-0 transition-colors duration-200 ${
             getClassName(index) === 'correct' 
               ? 'bg-green-500' 
