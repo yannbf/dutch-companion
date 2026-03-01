@@ -13,6 +13,7 @@ import { ExerciseProgress, ExerciseSummary, ScoreDisplay } from "@/components/ex
 import { AppHeader } from "@/components/AppHeader";
 import { useSpeechRecognition } from "@/hooks/useSpeechRecognition";
 import SpeechRecognitionButton from "@/components/SpeechRecognitionButton";
+import { isE2EDeterministicMode } from "@/lib/devDeterministic";
 
 type WordItem = {
   id: string;
@@ -101,11 +102,23 @@ const SeparableVerbs = () => {
 
     const pool = mode === "separable-verbs" ? separableVerbs : omTeExercises;
     const filtered = pool.filter((v) => selectedDifficulties.includes(v.difficulty));
-    const shuffled = [...filtered].sort(() => Math.random() - 0.5);
+
+    let selected: SentenceBuilderExercise[]
+    if (isE2EDeterministicMode() && mode === 'separable-verbs') {
+      const sorted = [...filtered].sort((a, b) => a.id.localeCompare(b.id));
+      const targetIndex = sorted.findIndex((v) => 'verb' in v && v.verb === 'weggooien');
+      if (targetIndex > 0) {
+        const [target] = sorted.splice(targetIndex, 1);
+        sorted.unshift(target);
+      }
+      selected = sorted.slice(0, Math.min(10, sorted.length));
+    } else {
+      const shuffled = [...filtered].sort(() => Math.random() - 0.5);
+      selected = shuffled.slice(0, Math.min(10, filtered.length));
+    }
 
     // Take up to 10 exercises, or all available if less
     const maxRounds = Math.min(10, filtered.length);
-    const selected = shuffled.slice(0, maxRounds);
 
     setTotalRounds(maxRounds);
     setExercises(selected);
@@ -469,6 +482,8 @@ const SeparableVerbs = () => {
                     {userAnswer.map((item, index) => (
                       <motion.button
                         key={item.id}
+                        data-testid="sentence-answer-word"
+                        data-word={item.text}
                         layout
                         initial={{ scale: 0.8, opacity: 0, y: 20 }}
                         animate={{
@@ -529,6 +544,8 @@ const SeparableVerbs = () => {
                   ) : (
                     // Available word
                     <motion.button
+                      data-testid="sentence-available-word"
+                      data-word={item.text}
                       layout
                       initial={{ scale: 1 }}
                       whileHover={{ scale: 1.05 }}
@@ -557,6 +574,7 @@ const SeparableVerbs = () => {
               transition={{ duration: 0.4 }}
             >
               <Button
+                data-testid="sentence-check-button"
                 onClick={handleCheck}
                 className={`w-full h-12 text-base font-bold rounded-xl transition-colors duration-300 ${showSuccessButton
                   ? 'bg-green-500 hover:bg-green-500/90 text-white !opacity-100'

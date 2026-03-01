@@ -1,6 +1,7 @@
 import { useState, ReactNode, useCallback } from "react";
 import { Shuffle, Plus, User, Clock, Sparkles } from "lucide-react";
 import { AppHeader } from "@/components/AppHeader";
+import { isE2EDeterministicMode } from "@/lib/devDeterministic";
 
 const pronouns = [
   "u",
@@ -157,6 +158,7 @@ const WheelButton = ({
       <span className={`text-[11px] uppercase tracking-wide font-semibold ${labelColorClass}`}>{label}</span>
     </div>
     <button
+      data-testid={ariaLabel === 'Pronomen opnieuw' ? 'spin-pronoun' : ariaLabel === 'Tijd opnieuw' ? 'spin-tense' : 'spin-verb'}
       className={
         `w-full max-w-[22rem] rounded-full text-[30px] uppercase font-bold bg-transparent border-none text-white transition-colors focus:outline-none cursor-pointer
         ${animate ? "animate-pulse" : ""}
@@ -257,9 +259,10 @@ const SentenceGenerator = () => {
   }, [tense]);
 
   const rollVerb = useCallback(() => {
-    const pick = Math.floor(Math.random() * 3);
     const categories = ["regular", "irregular", "separable"] as const;
-    const category = categories[pick];
+    const category = isE2EDeterministicMode()
+      ? 'regular'
+      : categories[Math.floor(Math.random() * 3)];
     const pool = category === "regular" ? regularVerbs : category === "irregular" ? irregularVerbs : separableVerbs;
     setAnim((a) => ({ ...a, v: true }));
     setTimeout(() => setAnim((a) => ({ ...a, v: false })), 220);

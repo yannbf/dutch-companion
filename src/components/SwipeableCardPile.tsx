@@ -156,6 +156,7 @@ export function SwipeableCardPile<T extends CardContent>({
         return (
           <motion.div
             key={`${card.id}-${currentIndexToUse + index}`}
+            data-testid={isActive ? 'active-card' : `background-card-${index}`}
             className={`absolute inset-0 ${isActive ? 'cursor-grab active:cursor-grabbing' : 'pointer-events-none'}`}
             style={{
               scale,
@@ -181,7 +182,7 @@ export function SwipeableCardPile<T extends CardContent>({
 
               {isActive && (
                 <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 w-full text-center">
-                  <p className="text-sm text-muted-foreground">Tap to flip • Swipe to score</p>
+                  <p data-testid="card-instructions" className="text-sm text-muted-foreground">Tap to flip • Swipe to score</p>
                 </div>
               )}
 

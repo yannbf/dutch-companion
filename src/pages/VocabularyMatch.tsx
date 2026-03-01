@@ -8,6 +8,7 @@ import { hapticService } from "@/services/haptic";
 import { reviewTracker } from "@/lib/reviewTracker";
 import { exerciseStats } from "@/lib/exerciseStats";
 import { motion } from "framer-motion";
+import { isE2EDeterministicMode } from "@/lib/devDeterministic";
 import { ExerciseProgress, ExerciseSummary } from "@/components/exercise";
 import { AppHeader } from "@/components/AppHeader";
 
@@ -97,6 +98,23 @@ const VocabularyMatch = () => {
   }, [currentPairs, currentTurn]);
 
   useEffect(() => {
+    if (isE2EDeterministicMode()) {
+      ;(window as Window & {
+        __e2eCompleteVocabularyMatchTurn?: () => void
+        __e2eSelectVocabularyDutch?: (index: number | null) => void
+      }).__e2eCompleteVocabularyMatchTurn = () => {
+        if (!currentPairs) return
+        setMatches(new Set(currentPairs.map((_, i) => i)))
+      }
+
+      ;(window as Window & {
+        __e2eCompleteVocabularyMatchTurn?: () => void
+        __e2eSelectVocabularyDutch?: (index: number | null) => void
+      }).__e2eSelectVocabularyDutch = (index: number | null) => {
+        setSelectedDutch(index)
+      }
+    }
+
     if (currentPairs && matches.size === currentPairs.length) {
       const timer = setTimeout(() => {
         if (currentTurn < 4 && currentTurn < turns.length - 1) {
@@ -225,6 +243,7 @@ const VocabularyMatch = () => {
               return (
                 <motion.button
                   key={`dutch-${index}`}
+                  data-testid={`vocab-match-dutch-${index}`}
                   onClick={() => handleDutchClick(index)}
                   disabled={isMatched}
                   initial={{ opacity: 0, x: -20 }}
@@ -272,6 +291,7 @@ const VocabularyMatch = () => {
               return (
                 <motion.button
                   key={`english-${index}`}
+                  data-testid={`vocab-match-english-${index}`}
                   onClick={() => handleEnglishClick(pair.englishTranslation)}
                   disabled={isMatched || selectedDutch === null}
                   initial={{ opacity: 0, x: 20 }}
@@ -318,7 +338,7 @@ const VocabularyMatch = () => {
             className="mt-8 text-center"
           >
             <div className="inline-block px-6 py-3 bg-green-500/10 border-2 border-green-500 rounded-lg">
-              <p className="text-green-500 font-semibold">Perfect! Moving to next turn...</p>
+              <p data-testid="vocab-match-success" className="text-green-500 font-semibold">Perfect! Moving to next turn...</p>
             </div>
           </motion.div>
         )}

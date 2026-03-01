@@ -23,15 +23,23 @@ Read these first for implementation tasks:
    - Maintain quick exercise loops (setup → play → feedback).
    - Keep interactions mobile-friendly (tap targets, readable cards, clear CTA labels).
 
-3. **Respect learning-state persistence**
+3. **Write meaningful tests (not render-only tests)**
+   - Tests must verify behavior and outcomes, not just that a page renders.
+   - Prefer assertions on:
+     - state changes (score/progress)
+     - interaction outcomes (correct/incorrect feedback)
+     - route transitions and completion states
+   - Add stable selectors (`data-testid`) for difficult-to-target interactive elements.
+
+4. **Respect learning-state persistence**
    - Settings/progress/favorites rely on localStorage stores.
    - Do not rename storage keys casually; migration impact must be documented.
 
-4. **Framework and platform assumptions**
+5. **Framework and platform assumptions**
    - Current app is a React + Vite web app.
    - Keep framework/platform docs current if this changes.
 
-5. **Do not leave docs stale**
+6. **Do not leave docs stale**
    - If architecture, UX goals, or workflows change, update:
      - `AGENTS.md`
      - `docs/PRODUCT_UX_INTENT.md`
