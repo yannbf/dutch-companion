@@ -1,5 +1,7 @@
+import { useState } from "react";
 import { ExternalLink, Youtube, Music, Gamepad2, Tv } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 
 interface ResourceItem {
   title: string;
@@ -8,7 +10,21 @@ interface ResourceItem {
   thumbnail?: string;
 }
 
+type TvGenre = "Comedy" | "Drama" | "Crime" | "Thriller" | "Reality" | "Documentary";
+
+interface TvShow {
+  title: string;
+  description: string;
+  genre: TvGenre;
+  platform: { name: string; url: string };
+  thumbnail?: string;
+}
+
+const tvGenres: TvGenre[] = ["Comedy", "Drama", "Crime", "Thriller", "Reality", "Documentary"];
+
 const Resources = () => {
+  const [genreFilter, setGenreFilter] = useState<TvGenre | "All">("All");
+
   const youtubeChannels: ResourceItem[] = [
     {
       title: "NOS Journaal in Makkelijke Taal",
@@ -53,20 +69,96 @@ const Resources = () => {
     },
   ];
 
-  const tvShows: ResourceItem[] = [
+  const tvShows: TvShow[] = [
     {
       title: "Amsterdam Empire",
-      description: "Netflix series about a crime drama set in Amsterdam",
-      url: "https://www.netflix.com/title/81654735",
+      description: "Crime drama set in Amsterdam's coffeeshop world",
+      genre: "Crime",
+      platform: { name: "Netflix", url: "https://www.netflix.com/title/81654735" },
       thumbnail: "https://m.media-amazon.com/images/M/MV5BYWQ0ZTMyNTctYjkyZS00NmE4LWFiZTItYzkzZWY1ZmJhNjA5XkEyXkFqcGc@._V1_FMjpg_UX1000_.jpg",
     },
     {
       title: "Haantjes",
-      description: "Comedy series about four men in midlife crisis",
-      url: "https://www.netflix.com/title/81698659",
+      description: "Four middle-aged friends in a masculinity crisis",
+      genre: "Comedy",
+      platform: { name: "Netflix", url: "https://www.netflix.com/title/81698659" },
       thumbnail: "https://encrypted-tbn1.gstatic.com/images?q=tbn:ANd9GcQo4WDOWwAa7xVKiCfPK1HR7kHs15H4Rf2WW06z8xZIpdHwiZFV",
     },
+    {
+      title: "Voetbalouders",
+      description: "A single mum meets the overbearing parents of her son's new football team",
+      genre: "Comedy",
+      platform: { name: "Netflix", url: "https://www.netflix.com/title/81628960" },
+    },
+    {
+      title: "Dirty Lines",
+      description: "1980s Amsterdam: a student takes a job at an erotic phone-line start-up (mature)",
+      genre: "Drama",
+      platform: { name: "Netflix", url: "https://www.netflix.com/title/81149112" },
+    },
+    {
+      title: "De Eetclub",
+      description: "A villa fire exposes the secrets of a wealthy friend group in Bergen; from Saskia Noort's novel",
+      genre: "Thriller",
+      platform: { name: "Netflix", url: "https://www.netflix.com/title/81662912" },
+    },
+    {
+      title: "Oogappels",
+      description: "Award-winning drama about four families in a Dutch town; natural everyday dialogue",
+      genre: "Drama",
+      platform: { name: "NPO Start", url: "https://npo.nl/start/serie/oogappels" },
+    },
+    {
+      title: "De Luizenmoeder",
+      description: "A new mum at a primary school clashes with the other parents; school-gate Dutch",
+      genre: "Comedy",
+      platform: { name: "NPO Start", url: "https://npo.nl/start/serie/de-luizenmoeder" },
+    },
+    {
+      title: "Penoza",
+      description: "A mother takes over her murdered husband's criminal empire",
+      genre: "Crime",
+      platform: { name: "NPO Start", url: "https://npo.nl/start/serie/penoza" },
+    },
+    {
+      title: "Het verhaal van Nederland",
+      description: "Docudrama on Dutch history with clear, slow narration (The Story of the Netherlands)",
+      genre: "Documentary",
+      platform: { name: "NPO Start", url: "https://npo.nl/start/serie/het-verhaal-van-nederland" },
+    },
+    {
+      title: "Vakkenvullers",
+      description: "Teens working at a supermarket; youth slang and everyday Dutch",
+      genre: "Comedy",
+      platform: { name: "NPO Start", url: "https://npo.nl/start/serie/vakkenvullers" },
+    },
+    {
+      title: "Máxima",
+      description: "Máxima Zorreguieta's road to becoming queen",
+      genre: "Drama",
+      platform: { name: "Videoland", url: "https://www.videoland.com/nl/maxima/" },
+    },
+    {
+      title: "Kopen Zonder Kijken",
+      description: "Couples let a team buy and renovate a house they only see afterwards; housing vocabulary",
+      genre: "Reality",
+      platform: { name: "Videoland", url: "https://v2.videoland.com/kopen-zonder-kijken-p_133" },
+    },
+    {
+      title: "Amsterdam Centraal 24/7",
+      description: "Docuseries on a day and night at Amsterdam Centraal station; real everyday speech",
+      genre: "Documentary",
+      platform: { name: "Disney+", url: "https://www.disneyplus.com/nl-nl/browse/entity-2c9e28f7-c47d-45cc-9ba8-3f0117928a5c" },
+    },
+    {
+      title: "Bon Bini: Judeska in da House",
+      description: "Film: Judeska gets stuck in a minister's villa during lockdown",
+      genre: "Comedy",
+      platform: { name: "Prime Video", url: "https://www.primevideo.com/detail/amzn1.dv.gti.f180f0b1-c8ef-4f4b-9e5f-4ea19433edbb" },
+    },
   ];
+
+  const visibleShows = genreFilter === "All" ? tvShows : tvShows.filter((show) => show.genre === genreFilter);
 
   const openLink = (url: string) => {
     window.open(url, '_blank', 'noopener,noreferrer');
@@ -230,15 +322,33 @@ const Resources = () => {
               TV Shows
             </CardTitle>
             <CardDescription>
-              Immerse yourself in Dutch through series and shows
+              Series and films by platform. NPO Start is free with a Dutch account; the others need a subscription.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            {tvShows.map((show, index) => (
+            <div className="flex flex-wrap gap-2">
+              {(["All", ...tvGenres] as const).map((genre) => (
+                <button
+                  key={genre}
+                  type="button"
+                  onClick={() => setGenreFilter(genre)}
+                  aria-pressed={genreFilter === genre}
+                  className={`rounded-full border px-3 py-1 text-xs transition-colors ${
+                    genreFilter === genre
+                      ? "bg-primary text-primary-foreground border-primary"
+                      : "bg-background text-muted-foreground hover:bg-secondary/30"
+                  }`}
+                >
+                  {genre}
+                </button>
+              ))}
+            </div>
+            {visibleShows.map((show) => (
               <div
-                key={index}
+                key={show.title}
+                data-testid="tv-show-card"
                 className="p-4 bg-secondary/20 rounded-lg hover:bg-secondary/30 transition-colors cursor-pointer"
-                onClick={() => openLink(show.url)}
+                onClick={() => openLink(show.platform.url)}
               >
                 <div className="flex items-start gap-4">
                   {show.thumbnail && (
@@ -250,15 +360,14 @@ const Resources = () => {
                     />
                   )}
                   <div className="flex-1">
-                    <div className="flex items-start justify-between gap-3">
-                      <div>
-                        <h3 className="font-semibold text-foreground mb-1">
-                          {show.title}
-                        </h3>
-                        <p className="text-sm text-muted-foreground">
-                          {show.description}
-                        </p>
-                      </div>
+                    <h3 className="font-semibold text-foreground mb-1">{show.title}</h3>
+                    <p className="text-sm text-muted-foreground">{show.description}</p>
+                    <div className="mt-2 flex items-center justify-between gap-2">
+                      <Badge variant="secondary">{show.genre}</Badge>
+                      <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                        {show.platform.name}
+                        <ExternalLink className="w-3 h-3" />
+                      </span>
                     </div>
                   </div>
                 </div>
