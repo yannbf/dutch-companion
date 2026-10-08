@@ -20,6 +20,26 @@ interface TvShow {
   thumbnail: string;
 }
 
+const GENRE_CLASSES: Record<TvGenre, string> = {
+  Comedy: "bg-amber-500/15 text-amber-300 border-amber-500/30",
+  Drama: "bg-rose-500/15 text-rose-300 border-rose-500/30",
+  Crime: "bg-zinc-500/15 text-zinc-300 border-zinc-500/30",
+  Thriller: "bg-violet-500/15 text-violet-300 border-violet-500/30",
+  Reality: "bg-emerald-500/15 text-emerald-300 border-emerald-500/30",
+  Documentary: "bg-sky-500/15 text-sky-300 border-sky-500/30",
+};
+
+const PLATFORMS: Record<string, { name: string; domain: string }> = {
+  Netflix: { name: "Netflix", domain: "netflix.com" },
+  "NPO Start": { name: "NPO Start", domain: "npo.nl" },
+  Videoland: { name: "Videoland", domain: "videoland.com" },
+  "Disney+": { name: "Disney+", domain: "disneyplus.com" },
+  "Prime Video": { name: "Prime Video", domain: "primevideo.com" },
+};
+
+const platformLogo = (domain: string) =>
+  `https://www.google.com/s2/favicons?domain=${domain}&sz=64`;
+
 const tvGenres: TvGenre[] = ["Comedy", "Drama", "Crime", "Thriller", "Reality", "Documentary"];
 
 const Resources = () => {
@@ -347,7 +367,9 @@ const Resources = () => {
                   aria-pressed={genreFilter === genre}
                   className={`rounded-full border px-3 py-1 text-xs transition-colors ${
                     genreFilter === genre
-                      ? "bg-primary text-primary-foreground border-primary"
+                      ? genre === "All"
+                        ? "bg-primary text-primary-foreground border-primary"
+                        : GENRE_CLASSES[genre]
                       : "bg-background text-muted-foreground hover:bg-secondary/30"
                   }`}
                 >
@@ -375,11 +397,16 @@ const Resources = () => {
                     <h3 className="font-semibold text-foreground mb-1">{show.title}</h3>
                     <p className="text-sm text-muted-foreground">{show.description}</p>
                     <div className="mt-2 flex items-center justify-between gap-2">
-                      <Badge variant="secondary">{show.genre}</Badge>
-                      <span className="flex items-center gap-1 text-xs text-muted-foreground">
-                        {show.platform.name}
-                        <ExternalLink className="w-3 h-3" />
-                      </span>
+                      <Badge variant="outline" className={GENRE_CLASSES[show.genre]}>
+                        {show.genre}
+                      </Badge>
+                      <img
+                        src={platformLogo(PLATFORMS[show.platform.name].domain)}
+                        alt={show.platform.name}
+                        title={show.platform.name}
+                        className="w-5 h-5 rounded-sm"
+                        loading="lazy"
+                      />
                     </div>
                   </div>
                 </div>
